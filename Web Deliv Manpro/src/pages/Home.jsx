@@ -39,7 +39,7 @@ export default function Home() {
             <h1 className="wp-h1">SeCon-D Directory</h1>
             <p className="wp-p text-slate-600 dark:text-slate-300">
               Temukan toko makanan, minuman, laundry, dan kebutuhan harian
-              lainnya. Kontak langsung via telepon atau WhatsApp.
+              lainnya. Kontak langsung via telepon atau WhatsApp√.
             </p>
           </div>
           <a href="/directory" className="btn btn-primary">
