@@ -1,0 +1,1 @@
+export const getJSON=(k,f)=>{try{const s=localStorage.getItem(k);return s?JSON.parse(s):f}catch{return f}};export const setJSON=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}

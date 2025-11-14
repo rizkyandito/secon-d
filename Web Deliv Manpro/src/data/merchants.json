@@ -1,0 +1,56 @@
+[
+  {
+    "id": 100,
+    "name": "Mororejo",
+    "category": "Makanan",
+    "logo": "/images/Product1.png",
+    "phone": "081234567890",
+    "whatsapp": "6281234567890",
+    "menu": [
+      {
+        "name": "Nasi Goreng",
+        "price": 25000
+      },
+      {
+        "name": "Sate Ayam",
+        "price": 30000
+      }
+    ]
+  },
+  {
+    "id": 101,
+    "name": "Podomoro",
+    "category": "Minuman",
+    "logo": "/images/Product2.png",
+    "phone": "082233445566",
+    "whatsapp": "6282233445566",
+    "menu": [
+      {
+        "name": "Milkshake",
+        "price": 18000
+      },
+      {
+        "name": "Thai Tea",
+        "price": 15000
+      }
+    ]
+  },
+  {
+    "id": 102,
+    "name": "Laundry Express",
+    "category": "Laundry",
+    "logo": "/images/Product3.png",
+    "phone": "081998877665",
+    "whatsapp": "6281998877665",
+    "menu": [
+      {
+        "name": "Cuci Kering",
+        "price": 7000
+      },
+      {
+        "name": "Cuci Setrika",
+        "price": 12000
+      }
+    ]
+  }
+]

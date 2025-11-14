@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer components{
+  .btn{@apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition duration-300;}
+  .btn-primary{@apply bg-gradient-to-r from-brand to-brand2 text-white hover:shadow-card hover:-translate-y-0.5;}
+  .btn-outline{@apply border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800;}
+  .btn-danger{@apply bg-brand3/10 text-brand3 hover:bg-brand3 hover:text-white;}
+  .btn-sm{@apply px-3 py-1 text-xs;}
+  .card{@apply rounded-3xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900/70 shadow-card p-5;}
+  .glass{@apply bg-white/60 dark:bg-slate-900/60 backdrop-blur;}
+  .wp-h1{@apply text-4xl md:text-5xl font-extrabold tracking-tight;}
+  .wp-h2{@apply text-3xl font-bold;}
+  .wp-p{@apply text-base leading-7;}
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
