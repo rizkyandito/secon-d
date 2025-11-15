@@ -18,7 +18,11 @@ const mapMerchantRows = (rows = []) =>
       name: item.name,
       price: Number(item.price || 0),
       merchant_id: item.merchant_id,
+    })),
+    menu_images: (row.menu_images || []).map((item) => ({
+      id: item.id,
       image_url: item.image_url,
+      merchant_id: item.merchant_id,
     })),
   }))
 
@@ -60,7 +64,7 @@ export function DataProvider({ children }) {
         supabase
           .from("merchants")
           .select(
-            "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id, image_url)"
+            "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id), menu_images(id, image_url, merchant_id)"
           )
           .order("created_at", { ascending: true }),
         supabase
@@ -117,6 +121,14 @@ export function DataProvider({ children }) {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "menu_items" },
+        () => {
+          if (refreshTimer.current) clearTimeout(refreshTimer.current)
+          refreshTimer.current = setTimeout(fetchFromSupabase, 400)
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "menu_images" },
         () => {
           if (refreshTimer.current) clearTimeout(refreshTimer.current)
           refreshTimer.current = setTimeout(fetchFromSupabase, 400)
@@ -232,10 +244,9 @@ export function DataProvider({ children }) {
               merchant_id: merchantId,
               name: item.name,
               price: item.price,
-              image_url: item.image_url,
             },
           ])
-          .select("id, name, price, merchant_id, image_url")
+          .select("id, name, price, merchant_id")
           .single()
 
         if (insertError) throw insertError
@@ -321,6 +332,79 @@ export function DataProvider({ children }) {
     )
   }
 
+  const addMenuImage = async (merchantId, imageUrl) => {
+    if (usingSupabase) {
+      try {
+        const { data, error: insertError } = await supabase
+          .from("menu_images")
+          .insert([
+            {
+              merchant_id: merchantId,
+              image_url: imageUrl,
+            },
+          ])
+          .select("id, image_url, merchant_id")
+          .single()
+
+        if (insertError) throw insertError
+
+        setMerchants((prev) =>
+          prev.map((merchant) =>
+            merchant.id === merchantId
+              ? {
+                  ...merchant,
+                  menu_images: [...(merchant.menu_images || []), { ...data }],
+                }
+              : merchant
+          )
+        )
+        return data
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    const newImage = { id: Date.now(), image_url: imageUrl, merchant_id: merchantId }
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? { ...merchant, menu_images: [...(merchant.menu_images || []), newImage] }
+          : merchant
+      )
+    )
+    return newImage
+  }
+
+  const removeMenuImage = async (merchantId, imageId) => {
+    if (usingSupabase) {
+      try {
+        const { error: deleteError } = await supabase
+          .from("menu_images")
+          .delete()
+          .eq("id", imageId)
+
+        if (deleteError) throw deleteError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? {
+              ...merchant,
+              menu_images: merchant.menu_images.filter(
+                (image) => image.id !== imageId
+              ),
+            }
+          : merchant
+      )
+    )
+  }
+
   const addRecommendation = async (payload) => {
     if (usingSupabase) {
       try {
@@ -394,6 +478,8 @@ export function DataProvider({ children }) {
     addMenuItem,
     updateMenuItem,
     removeMenuItem,
+    addMenuImage,
+    removeMenuImage,
     recommendations,
     addRecommendation,
     toggleRecommendationDone,

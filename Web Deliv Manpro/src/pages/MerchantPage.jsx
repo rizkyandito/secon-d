@@ -1,13 +1,12 @@
-import { useContext } from "react"
 import { useParams } from "react-router-dom"
 import { useData } from "../context/DataContext"
 import Reviews from "../components/Reviews"
 
 export default function MerchantPage() {
   const { id } = useParams()
-  const { merchants, loading } = useData()
+  const { merchants, isLoading } = useData()
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="animate-pulse">
         <div className="w-48 h-8 bg-slate-200 rounded mb-4"></div>
@@ -67,35 +66,34 @@ export default function MerchantPage() {
             )}
           </div>
 
-          {merchant.menu && merchant.menu.length > 0 && (
+          {(merchant.menu_images && merchant.menu_images.length > 0) && (
             <div className="mt-6">
-              <h2 className="text-2xl font-semibold mb-3">Menu</h2>
+              <h2 className="text-2xl font-semibold mb-3">Gambar Menu</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {merchant.menu.map((item) => {
-                  console.log("Menu item image URL:", item.image_url);
-                  return (
-                    <div key={item.id} className="border rounded-lg p-3 flex flex-col justify-between shadow-sm">
-                      <div>
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="w-full h-32 object-cover rounded-md mb-2"
-                          />
-                        ) : (
-                          <div className="w-full h-32 bg-slate-200 rounded-md mb-2 flex items-center justify-center">
-                            <span className="text-slate-500 text-sm">No Image</span>
-                          </div>
-                        )}
-                        <div className="font-semibold">{item.name}</div>
-                      </div>
-                      <div className="text-slate-600 mt-2">
-                        Rp {Number(item.price || 0).toLocaleString("id-ID")}
-                      </div>
-                    </div>
-                  );
-                })}
+                {merchant.menu_images.map((image) => (
+                  <div key={image.id} className="border rounded-lg shadow-sm">
+                    <img
+                      src={image.image_url}
+                      alt="Menu"
+                      className="w-full h-48 object-cover rounded-md"
+                    />
+                  </div>
+                ))}
               </div>
+            </div>
+          )}
+
+          {(merchant.menu && merchant.menu.length > 0) && (
+            <div className="mt-6">
+              <h2 className="text-2xl font-semibold mb-3">Daftar Menu</h2>
+              <ul className="list-disc ml-5 space-y-2">
+                {merchant.menu.map((item) => (
+                  <li key={item.id}>
+                    <span className="font-semibold">{item.name}</span> — Rp{" "}
+                    {Number(item.price || 0).toLocaleString("id-ID")}
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </div>

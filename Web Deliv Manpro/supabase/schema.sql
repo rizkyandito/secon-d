@@ -21,8 +21,7 @@ create table if not exists public.menu_items (
   created_at timestamp with time zone default now(),
   merchant_id uuid not null references public.merchants(id) on delete cascade,
   name text not null,
-  price numeric not null default 0,
-  image_url text
+  price numeric not null default 0
 );
 
 -- 3. Tabel recommendations
@@ -124,5 +123,31 @@ values
   ('550e8400-e29b-41d4-a716-446655440102', 'Cuci Setrika', 12000);
 
 -- Rekomendasi kosong saat awal, tidak perlu seed
+
+-- 6. Tabel menu_images
+create table if not exists public.menu_images (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamp with time zone default now(),
+  merchant_id uuid not null references public.merchants(id) on delete cascade,
+  image_url text not null
+);
+
+-- 7. Policy untuk menu_images
+alter table public.menu_images enable row level security;
+
+create policy "Allow read menu_images for everyone"
+  on public.menu_images
+  for select
+  using (true);
+
+create policy "Allow write menu_images for anon"
+  on public.menu_images
+  for insert
+  with check (true);
+
+create policy "Allow delete menu_images for anon"
+  on public.menu_images
+  for delete
+  using (true);
 
 

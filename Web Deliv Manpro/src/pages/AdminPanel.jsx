@@ -5,7 +5,10 @@ import { useState } from "react"
 import { uploadImage } from "../utils/imageUploader.js"
 
 export default function AdminPanel() {
-  const { user, logout } = useAuth()
+  const {
+    user,
+    logout
+  } = useAuth()
   const {
     merchants,
     addMerchant,
@@ -14,6 +17,8 @@ export default function AdminPanel() {
     addMenuItem,
     updateMenuItem,
     removeMenuItem,
+    addMenuImage,
+    removeMenuImage,
     recommendations,
     toggleRecommendationDone,
     removeRecommendation,
@@ -34,8 +39,6 @@ export default function AdminPanel() {
   })
   const [editId, setEditId] = useState(null)
   const [notification, setNotification] = useState(null)
-  const [menuFormType, setMenuFormType] = useState("manual") // 'manual' or 'image'
-  const [menuForm, setMenuForm] = useState({ name: "", price: "" })
 
   if (!user) return <Navigate to="/" replace />
 
@@ -113,39 +116,37 @@ export default function AdminPanel() {
 
   const handleAddMenuItem = async (merchantId, e) => {
     e.preventDefault()
-    const imageFile = e.target.menuImage ? e.target.menuImage.files[0] : null
+    const name = e.target.menuName.value
+    const price = Number(e.target.menuPrice.value)
 
-    if (!menuForm.name) {
+    if (!name) {
       showNotification("⚠️ Nama menu wajib diisi!", "warning")
       return
     }
 
     try {
-      let imageUrl = null
-      if (imageFile) {
-        showNotification("⏳ Mengunggah gambar...", "info")
-        imageUrl = await uploadImage(imageFile)
-      }
-
       await addMenuItem(merchantId, {
-        name: menuForm.name,
-        price: Number(menuForm.price || 0),
-        image_url: imageUrl,
+        name,
+        price
       })
       showNotification("✅ Menu berhasil ditambahkan!", "success")
       e.target.reset()
-      setMenuForm({ name: "", price: "" })
     } catch (err) {
       showNotification(`❌ ${err.message || "Gagal menambah menu"}`, "error")
     }
   }
 
-  const handleMenuImageSelect = (e) => {
-    const file = e.target.files[0]
+  const handleAddMenuImage = async (merchantId, file) => {
     if (!file) return
 
-    const name = file.name.split(".").slice(0, -1).join(".")
-    setMenuForm({ name, price: 0 })
+    try {
+      showNotification("⏳ Mengunggah gambar...", "info")
+      const imageUrl = await uploadImage(file)
+      await addMenuImage(merchantId, imageUrl)
+      showNotification("✅ Gambar menu berhasil ditambahkan!", "success")
+    } catch (err) {
+      showNotification(`❌ ${err.message || "Gagal menambah gambar menu"}`, "error")
+    }
   }
 
   const handleUpdateMenuItem = async (merchantId, itemId, updates) => {
@@ -156,25 +157,22 @@ export default function AdminPanel() {
     }
   }
 
-  const handleUpdateMenuItemImage = async (merchantId, itemId, file) => {
-    if (!file) return
-
-    try {
-      showNotification("⏳ Mengunggah gambar...", "info")
-      const imageUrl = await uploadImage(file)
-      await updateMenuItem(merchantId, itemId, { image_url: imageUrl })
-      showNotification("✅ Gambar menu berhasil diperbarui!", "success")
-    } catch (err) {
-      showNotification(`❌ ${err.message || "Gagal memperbarui gambar menu"}`, "error")
-    }
-  }
-
   const handleRemoveMenuItem = async (merchantId, itemId) => {
     try {
       await removeMenuItem(merchantId, itemId)
       showNotification("✅ Menu berhasil dihapus!", "success")
     } catch (err) {
       showNotification(`❌ ${err.message || "Gagal menghapus menu"}`, "error")
+    }
+  }
+
+  const handleRemoveMenuImage = async (merchantId, imageId) => {
+    if (!confirm("Yakin ingin menghapus gambar menu ini?")) return
+    try {
+      await removeMenuImage(merchantId, imageId)
+      showNotification("✅ Gambar menu berhasil dihapus!", "success")
+    } catch (err) {
+      showNotification(`❌ ${err.message || "Gagal menghapus gambar menu"}`, "error")
     }
   }
 
@@ -379,144 +377,87 @@ export default function AdminPanel() {
                     </div>
                   </form>
                   <div className="mt-4">
-                    <h3 className="font-medium">Menu</h3>
+                    <h3 className="font-medium">Daftar Item Menu</h3>
                     <ul className="space-y-2 mt-2">
                       {(m.menu || []).map((item) => (
                         <li
                           key={item.id}
-                          className="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded px-2 py-2 text-sm"
+                          className="flex items-center gap-2 border rounded px-2 py-1 text-sm"
                         >
-                          <div className="flex items-center gap-2">
-                            {item.image_url ? (
-                              <img
-                                src={item.image_url}
-                                alt={item.name}
-                                className="w-16 h-16 object-cover rounded-md"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 bg-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs">
-                                No Image
-                              </div>
-                            )}
-                            <input
-                              type="text"
-                              defaultValue={item.name}
-                              onBlur={(e) =>
-                                handleUpdateMenuItem(m.id, item.id, {
-                                  name: e.target.value,
-                                })
-                              }
-                              className="border rounded px-2 py-1 flex-1"
-                            />
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              defaultValue={item.price}
-                              onBlur={(e) =>
-                                handleUpdateMenuItem(m.id, item.id, {
-                                  price: Number(e.target.value),
-                                })
-                              }
-                              className="border rounded px-2 py-1 w-28"
-                            />
-                            <input
-                              type="file"
-                              accept="image/png, image/jpeg, image/jpg"
-                              className="border rounded px-2 py-1 w-full"
-                              onChange={(e) =>
-                                handleUpdateMenuItemImage(
-                                  m.id,
-                                  item.id,
-                                  e.target.files[0]
-                                )
-                              }
-                            />
-                          </div>
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => handleRemoveMenuItem(m.id, item.id)}
-                              className="btn btn-danger btn-sm"
-                            >
-                              Hapus
-                            </button>
-                          </div>
+                          <input
+                            type="text"
+                            defaultValue={item.name}
+                            onBlur={(e) =>
+                              handleUpdateMenuItem(m.id, item.id, {
+                                name: e.target.value,
+                              })
+                            }
+                            className="border rounded px-2 py-1 flex-1"
+                          />
+                          <input
+                            type="number"
+                            defaultValue={item.price}
+                            onBlur={(e) =>
+                              handleUpdateMenuItem(m.id, item.id, {
+                                price: Number(e.target.value),
+                              })
+                            }
+                            className="border rounded px-2 py-1 w-28"
+                          />
+                          <button
+                            onClick={() => handleRemoveMenuItem(m.id, item.id)}
+                            className="btn btn-danger btn-sm"
+                          >
+                            Hapus
+                          </button>
                         </li>
                       ))}
                     </ul>
+                    <form
+                      onSubmit={(e) => handleAddMenuItem(m.id, e)}
+                      className="flex gap-2 mt-3"
+                    >
+                      <input
+                        name="menuName"
+                        placeholder="Nama menu"
+                        className="border rounded px-2 py-1 flex-1"
+                      />
+                      <input
+                        name="menuPrice"
+                        type="number"
+                        placeholder="Harga"
+                        className="border rounded px-2 py-1 w-28"
+                      />
+                      <button className="btn btn-primary">Tambah</button>
+                    </form>
+                  </div>
 
-                    <div className="mt-4">
-                      <div className="flex border-b">
-                        <button
-                          onClick={() => setMenuFormType('manual')}
-                          className={`py-2 px-4 ${menuFormType === 'manual' ? 'border-b-2 border-blue-500' : ''}`}
-                        >
-                          Manual
-                        </button>
-                        <button
-                          onClick={() => setMenuFormType('image')}
-                          className={`py-2 px-4 ${menuFormType === 'image' ? 'border-b-2 border-blue-500' : ''}`}
-                        >
-                          Dengan Gambar
-                        </button>
-                      </div>
-
-                      {menuFormType === 'manual' && (
-                        <form
-                          onSubmit={(e) => handleAddMenuItem(m.id, e)}
-                          className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3"
-                        >
-                          <input
-                            name="menuName"
-                            placeholder="Nama menu"
-                            value={menuForm.name}
-                            onChange={(e) => setMenuForm({ ...menuForm, name: e.target.value })}
-                            className="border rounded px-2 py-1 flex-1"
+                  <div className="mt-4">
+                    <h3 className="font-medium">Gambar Menu</h3>
+                    <div className="grid grid-cols-3 gap-2 mt-2">
+                      {(m.menu_images || []).map((image) => (
+                        <div key={image.id} className="relative">
+                          <img
+                            src={image.image_url}
+                            alt="Menu"
+                            className="w-full h-24 object-cover rounded-md"
                           />
-                          <input
-                            name="menuPrice"
-                            type="number"
-                            placeholder="Harga"
-                            value={menuForm.price}
-                            onChange={(e) => setMenuForm({ ...menuForm, price: e.target.value })}
-                            className="border rounded px-2 py-1 w-full"
-                          />
-                          <button className="btn btn-primary md:col-span-2">Tambah Menu</button>
-                        </form>
-                      )}
-
-                      {menuFormType === 'image' && (
-                        <form
-                          onSubmit={(e) => handleAddMenuItem(m.id, e)}
-                          className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3"
-                        >
-                          <div className="md:col-span-2">
-                            <input
-                              name="menuImage"
-                              type="file"
-                              accept="image/png, image/jpeg, image/jpg"
-                              className="border rounded px-2 py-1 w-full"
-                              onChange={handleMenuImageSelect}
-                            />
-                          </div>
-                          <input
-                            name="menuName"
-                            placeholder="Nama menu (dari nama file)"
-                            value={menuForm.name}
-                            onChange={(e) => setMenuForm({ ...menuForm, name: e.target.value })}
-                            className="border rounded px-2 py-1 flex-1"
-                          />
-                          <input
-                            name="menuPrice"
-                            type="number"
-                            placeholder="Harga"
-                            value={menuForm.price}
-                            onChange={(e) => setMenuForm({ ...menuForm, price: e.target.value })}
-                            className="border rounded px-2 py-1 w-full"
-                          />
-                          <button className="btn btn-primary md:col-span-2">Tambah Menu dengan Gambar</button>
-                        </form>
-                      )}
+                          <button
+                            onClick={() => handleRemoveMenuImage(m.id, image.id)}
+                            className="absolute top-1 right-1 btn btn-danger btn-sm"
+                          >
+                            Hapus
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-2">
+                      <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg"
+                        className="border rounded px-2 py-1 w-full"
+                        onChange={(e) => handleAddMenuImage(m.id, e.target.files[0])}
+                      />
                     </div>
                   </div>
                 </>
