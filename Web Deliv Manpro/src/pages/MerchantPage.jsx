@@ -70,14 +70,23 @@ export default function MerchantPage() {
           {merchant.menu && merchant.menu.length > 0 && (
             <div className="mt-6">
               <h2 className="text-2xl font-semibold mb-3">Menu</h2>
-              <ul className="list-disc ml-5 space-y-2">
-                {merchant.menu.map((item, i) => (
-                  <li key={`${merchant.id}-menu-${i}`}>
-                    <span className="font-semibold">{item.name}</span> — Rp{" "}
-                    {Number(item.price || 0).toLocaleString("id-ID")}
-                  </li>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {merchant.menu.map((item) => (
+                  <div key={item.id} className="border rounded-lg p-3">
+                    {item.image_url && (
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-32 object-cover rounded-md mb-2"
+                      />
+                    )}
+                    <div className="font-semibold">{item.name}</div>
+                    <div className="text-slate-600">
+                      Rp {Number(item.price || 0).toLocaleString("id-ID")}
+                    </div>
+                  </div>
                 ))}
-              </ul>
+              </div>
             </div>
           )}
         </div>

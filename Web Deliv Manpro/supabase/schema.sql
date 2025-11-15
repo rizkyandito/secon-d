@@ -21,7 +21,8 @@ create table if not exists public.menu_items (
   created_at timestamp with time zone default now(),
   merchant_id uuid not null references public.merchants(id) on delete cascade,
   name text not null,
-  price numeric not null default 0
+  price numeric not null default 0,
+  image_url text
 );
 
 -- 3. Tabel recommendations

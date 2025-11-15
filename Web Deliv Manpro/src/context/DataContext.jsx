@@ -18,6 +18,7 @@ const mapMerchantRows = (rows = []) =>
       name: item.name,
       price: Number(item.price || 0),
       merchant_id: item.merchant_id,
+      image_url: item.image_url,
     })),
   }))
 
@@ -59,7 +60,7 @@ export function DataProvider({ children }) {
         supabase
           .from("merchants")
           .select(
-            "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id)"
+            "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id, image_url)"
           )
           .order("created_at", { ascending: true }),
         supabase
@@ -231,9 +232,10 @@ export function DataProvider({ children }) {
               merchant_id: merchantId,
               name: item.name,
               price: item.price,
+              image_url: item.image_url,
             },
           ])
-          .select("id, name, price, merchant_id")
+          .select("id, name, price, merchant_id, image_url")
           .single()
 
         if (insertError) throw insertError

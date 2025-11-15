@@ -2,6 +2,7 @@ import { useData } from "../context/DataContext.jsx"
 import { useAuth } from "../context/AuthContext.jsx"
 import { Navigate } from "react-router-dom"
 import { useState } from "react"
+import { uploadImage } from "../utils/imageUploader.js"
 
 export default function AdminPanel() {
   const { user, logout } = useAuth()
@@ -112,13 +113,21 @@ export default function AdminPanel() {
     e.preventDefault()
     const name = e.target.menuName.value
     const price = Number(e.target.menuPrice.value)
+    const imageFile = e.target.menuImage.files[0]
+
     if (!name || !price) {
       showNotification("⚠️ Nama menu dan harga wajib diisi!", "warning")
       return
     }
 
     try {
-      await addMenuItem(merchantId, { name, price })
+      let imageUrl = null
+      if (imageFile) {
+        showNotification("⏳ Mengunggah gambar...", "info")
+        imageUrl = await uploadImage(imageFile)
+      }
+
+      await addMenuItem(merchantId, { name, price, image_url: imageUrl })
       showNotification("✅ Menu berhasil ditambahkan!", "success")
       e.target.reset()
     } catch (err) {
@@ -131,6 +140,19 @@ export default function AdminPanel() {
       await updateMenuItem(merchantId, itemId, updates)
     } catch (err) {
       showNotification(`❌ ${err.message || "Gagal memperbarui menu"}`, "error")
+    }
+  }
+
+  const handleUpdateMenuItemImage = async (merchantId, itemId, file) => {
+    if (!file) return
+
+    try {
+      showNotification("⏳ Mengunggah gambar...", "info")
+      const imageUrl = await uploadImage(file)
+      await updateMenuItem(merchantId, itemId, { image_url: imageUrl })
+      showNotification("✅ Gambar menu berhasil diperbarui!", "success")
+    } catch (err) {
+      showNotification(`❌ ${err.message || "Gagal memperbarui gambar menu"}`, "error")
     }
   }
 
@@ -349,40 +371,65 @@ export default function AdminPanel() {
                       {(m.menu || []).map((item) => (
                         <li
                           key={item.id}
-                          className="flex items-center gap-2 border rounded px-2 py-1 text-sm"
+                          className="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded px-2 py-2 text-sm"
                         >
-                          <input
-                            type="text"
-                            defaultValue={item.name}
-                            onBlur={(e) =>
-                              handleUpdateMenuItem(m.id, item.id, {
-                                name: e.target.value,
-                              })
-                            }
-                            className="border rounded px-2 py-1 flex-1"
-                          />
-                          <input
-                            type="number"
-                            defaultValue={item.price}
-                            onBlur={(e) =>
-                              handleUpdateMenuItem(m.id, item.id, {
-                                price: Number(e.target.value),
-                              })
-                            }
-                            className="border rounded px-2 py-1 w-28"
-                          />
-                          <button
-                            onClick={() => handleRemoveMenuItem(m.id, item.id)}
-                            className="btn btn-danger btn-sm"
-                          >
-                            Hapus
-                          </button>
+                          <div className="flex items-center gap-2">
+                            {item.image_url && (
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="w-16 h-16 object-cover rounded-md"
+                              />
+                            )}
+                            <input
+                              type="text"
+                              defaultValue={item.name}
+                              onBlur={(e) =>
+                                handleUpdateMenuItem(m.id, item.id, {
+                                  name: e.target.value,
+                                })
+                              }
+                              className="border rounded px-2 py-1 flex-1"
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              defaultValue={item.price}
+                              onBlur={(e) =>
+                                handleUpdateMenuItem(m.id, item.id, {
+                                  price: Number(e.target.value),
+                                })
+                              }
+                              className="border rounded px-2 py-1 w-28"
+                            />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="border rounded px-2 py-1 w-full"
+                              onChange={(e) =>
+                                handleUpdateMenuItemImage(
+                                  m.id,
+                                  item.id,
+                                  e.target.files[0]
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleRemoveMenuItem(m.id, item.id)}
+                              className="btn btn-danger btn-sm"
+                            >
+                              Hapus
+                            </button>
+                          </div>
                         </li>
                       ))}
                     </ul>
                     <form
                       onSubmit={(e) => handleAddMenuItem(m.id, e)}
-                      className="flex gap-2 mt-3"
+                      className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3"
                     >
                       <input
                         name="menuName"
@@ -393,9 +440,17 @@ export default function AdminPanel() {
                         name="menuPrice"
                         type="number"
                         placeholder="Harga"
-                        className="border rounded px-2 py-1 w-28"
+                        className="border rounded px-2 py-1 w-full"
                       />
-                      <button className="btn btn-primary">Tambah</button>
+                      <div className="md:col-span-2">
+                        <input
+                          name="menuImage"
+                          type="file"
+                          accept="image/*"
+                          className="border rounded px-2 py-1 w-full"
+                        />
+                      </div>
+                      <button className="btn btn-primary md:col-span-2">Tambah Menu</button>
                     </form>
                   </div>
                 </>
