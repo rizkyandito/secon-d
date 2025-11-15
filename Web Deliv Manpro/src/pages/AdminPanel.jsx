@@ -34,6 +34,7 @@ export default function AdminPanel() {
   })
   const [editId, setEditId] = useState(null)
   const [notification, setNotification] = useState(null)
+  const [menuFormType, setMenuFormType] = useState('manual') // 'manual' or 'image'
 
   if (!user) return <Navigate to="/" replace />
 
@@ -113,7 +114,7 @@ export default function AdminPanel() {
     e.preventDefault()
     const name = e.target.menuName.value
     const price = Number(e.target.menuPrice.value)
-    const imageFile = e.target.menuImage.files[0]
+    const imageFile = e.target.menuImage ? e.target.menuImage.files[0] : null
 
     if (!name || !price) {
       showNotification("⚠️ Nama menu dan harga wajib diisi!", "warning")
@@ -374,12 +375,16 @@ export default function AdminPanel() {
                           className="grid grid-cols-1 md:grid-cols-3 gap-2 border rounded px-2 py-2 text-sm"
                         >
                           <div className="flex items-center gap-2">
-                            {item.image_url && (
+                            {item.image_url ? (
                               <img
                                 src={item.image_url}
                                 alt={item.name}
                                 className="w-16 h-16 object-cover rounded-md"
                               />
+                            ) : (
+                              <div className="w-16 h-16 bg-slate-200 rounded-md flex items-center justify-center text-slate-500 text-xs">
+                                No Image
+                              </div>
                             )}
                             <input
                               type="text"
@@ -427,31 +432,71 @@ export default function AdminPanel() {
                         </li>
                       ))}
                     </ul>
-                    <form
-                      onSubmit={(e) => handleAddMenuItem(m.id, e)}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3"
-                    >
-                      <input
-                        name="menuName"
-                        placeholder="Nama menu"
-                        className="border rounded px-2 py-1 flex-1"
-                      />
-                      <input
-                        name="menuPrice"
-                        type="number"
-                        placeholder="Harga"
-                        className="border rounded px-2 py-1 w-full"
-                      />
-                      <div className="md:col-span-2">
-                        <input
-                          name="menuImage"
-                          type="file"
-                          accept="image/*"
-                          className="border rounded px-2 py-1 w-full"
-                        />
+
+                    <div className="mt-4">
+                      <div className="flex border-b">
+                        <button
+                          onClick={() => setMenuFormType('manual')}
+                          className={`py-2 px-4 ${menuFormType === 'manual' ? 'border-b-2 border-blue-500' : ''}`}
+                        >
+                          Manual
+                        </button>
+                        <button
+                          onClick={() => setMenuFormType('image')}
+                          className={`py-2 px-4 ${menuFormType === 'image' ? 'border-b-2 border-blue-500' : ''}`}
+                        >
+                          Dengan Gambar
+                        </button>
                       </div>
-                      <button className="btn btn-primary md:col-span-2">Tambah Menu</button>
-                    </form>
+
+                      {menuFormType === 'manual' && (
+                        <form
+                          onSubmit={(e) => handleAddMenuItem(m.id, e)}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3"
+                        >
+                          <input
+                            name="menuName"
+                            placeholder="Nama menu"
+                            className="border rounded px-2 py-1 flex-1"
+                          />
+                          <input
+                            name="menuPrice"
+                            type="number"
+                            placeholder="Harga"
+                            className="border rounded px-2 py-1 w-full"
+                          />
+                          <button className="btn btn-primary md:col-span-2">Tambah Menu</button>
+                        </form>
+                      )}
+
+                      {menuFormType === 'image' && (
+                        <form
+                          onSubmit={(e) => handleAddMenuItem(m.id, e)}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3"
+                        >
+                          <input
+                            name="menuName"
+                            placeholder="Nama menu"
+                            className="border rounded px-2 py-1 flex-1"
+                          />
+                          <input
+                            name="menuPrice"
+                            type="number"
+                            placeholder="Harga"
+                            className="border rounded px-2 py-1 w-full"
+                          />
+                          <div className="md:col-span-2">
+                            <input
+                              name="menuImage"
+                              type="file"
+                              accept="image/*"
+                              className="border rounded px-2 py-1 w-full"
+                            />
+                          </div>
+                          <button className="btn btn-primary md:col-span-2">Tambah Menu dengan Gambar</button>
+                        </form>
+                      )}
+                    </div>
                   </div>
                 </>
               ) : (
