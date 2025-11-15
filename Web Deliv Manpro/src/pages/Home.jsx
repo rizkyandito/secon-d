@@ -36,10 +36,10 @@ export default function Home() {
       <div className="card bg-gradient-to-r from-brand/20 via-brand2/20 to-brand3/20">
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
-            <h1 className="wp-h1">SeCon-D Directory</h1>
+            <h1 className="wp-h1">SeCon-D</h1>
             <p className="wp-p text-slate-600 dark:text-slate-300">
-              Temukan toko makanan, minuman, laundry, dan kebutuhan harian
-              lainnya. Kontak langsung via telepon atau WhatsApp√.
+              Search Contact and Directory, Temukan toko makanan, minuman, laundry, dan kebutuhan harian
+              lainnya. Kontak langsung via telepon atau WhatsApp.
             </p>
           </div>
           <a href="/directory" className="btn btn-primary">
