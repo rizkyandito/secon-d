@@ -1,10 +1,13 @@
+import { useState } from "react"
 import { useParams } from "react-router-dom"
 import { useData } from "../context/DataContext"
 import Reviews from "../components/Reviews"
+import ImageModal from "../components/ImageModal"
 
 export default function MerchantPage() {
   const { id } = useParams()
   const { merchants, isLoading } = useData()
+  const [selectedImage, setSelectedImage] = useState(null)
 
   if (isLoading) {
     return (
@@ -66,12 +69,19 @@ export default function MerchantPage() {
             )}
           </div>
 
-          {(merchant.menu_images && merchant.menu_images.length > 0) && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-semibold mb-3">Gambar Menu</h2>
+          <div className="mt-6">
+            {(merchant.menu_images?.length > 0 || merchant.menu?.length > 0) && (
+              <h2 className="text-2xl font-semibold mb-3">Menu</h2>
+            )}
+
+            {merchant.menu_images?.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {merchant.menu_images.map((image) => (
-                  <div key={image.id} className="border rounded-lg shadow-sm">
+                  <div
+                    key={image.id}
+                    className="border rounded-lg shadow-sm cursor-pointer"
+                    onClick={() => setSelectedImage(image.image_url)}
+                  >
                     <img
                       src={image.image_url}
                       alt="Menu"
@@ -80,13 +90,10 @@ export default function MerchantPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            )}
 
-          {(merchant.menu && merchant.menu.length > 0) && (
-            <div className="mt-6">
-              <h2 className="text-2xl font-semibold mb-3">Daftar Menu</h2>
-              <ul className="list-disc ml-5 space-y-2">
+            {merchant.menu?.length > 0 && (
+              <ul className="list-disc ml-5 space-y-2 mt-4">
                 {merchant.menu.map((item) => (
                   <li key={item.id}>
                     <span className="font-semibold">{item.name}</span> — Rp{" "}
@@ -94,8 +101,8 @@ export default function MerchantPage() {
                   </li>
                 ))}
               </ul>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div>
@@ -103,6 +110,8 @@ export default function MerchantPage() {
           <Reviews merchantId={merchant.id} />
         </div>
       </div>
+
+      <ImageModal imageUrl={selectedImage} onClose={() => setSelectedImage(null)} />
     </div>
   )
 }

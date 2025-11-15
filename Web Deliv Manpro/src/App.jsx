@@ -5,6 +5,7 @@ import Directory from './pages/Directory.jsx'
 import About from './pages/About.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
 import MerchantPage from './pages/MerchantPage.jsx'
+import LoginPage from './pages/LoginPage.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 import { useData } from './context/DataContext.jsx'
 import LoadingScreen from './components/LoadingScreen.jsx'
@@ -40,7 +41,7 @@ export default function App() {
           <Route path="/directory" element={<Directory />} />
           <Route path="/about" element={<About />} />
           <Route path="/merchant/:id" element={<MerchantPage />} />
-          <Route path="/admin" element={<Navigate to="/" replace />} />
+          <Route path="/admin" element={<LoginPage />} />
         </Routes>
       </main>
     </BrowserRouter>
