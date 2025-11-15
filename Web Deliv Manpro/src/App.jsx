@@ -6,9 +6,16 @@ import About from './pages/About.jsx'
 import AdminPanel from './pages/AdminPanel.jsx'
 import MerchantPage from './pages/MerchantPage.jsx'
 import { useAuth } from './context/AuthContext.jsx'
+import { useData } from './context/DataContext.jsx'
+import LoadingScreen from './components/LoadingScreen.jsx'
 
 export default function App() {
   const { user } = useAuth()
+  const { isLoading } = useData()
+
+  if (isLoading) {
+    return <LoadingScreen />
+  }
 
   // Jika admin login, langsung render AdminPanel saja
   if (user) {
