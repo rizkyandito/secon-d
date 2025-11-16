@@ -5,7 +5,7 @@ export default function About(){
     {name:'Adel',photo:'/images/founders/Adel.jpg'},
     {name:'Hazqie',photo:'/images/founders/Hazqie.png'},
     {name:'Luqman',photo:'/images/founders/Luqman.jpg'},
-    {name:'Dito',photo:'/images/founders/Dito.jpg'},
+    {name:'Dito',photo:'/images/founders/Dito.jpeg'},
   ]
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
