@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Navbar(){
   const { user, logout, theme, setTheme } = useAuth()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-50 glass border-b border-slate-200/60 dark:border-white/10">
@@ -18,8 +20,23 @@ export default function Navbar(){
         <div className="flex items-center gap-2">
           <button onClick={()=>setTheme(theme==='dark'?'light':'dark')} className="btn btn-outline">{theme==='dark'?'☀️':'🌙'}</button>
           {user && <button onClick={logout} className="btn btn-outline">Keluar</button>}
+          <div className="md:hidden">
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="btn btn-outline">
+              {isMenuOpen ? '✕' : '☰'}
+            </button>
+          </div>
         </div>
       </div>
+      {isMenuOpen && (
+        <div className="md:hidden">
+          <nav className="flex flex-col items-center gap-4 py-4 text-sm font-medium">
+            <NavLink to="/" className="hover:text-brand" onClick={() => setIsMenuOpen(false)}>Home</NavLink>
+            <NavLink to="/directory" className="hover:text-brand2" onClick={() => setIsMenuOpen(false)}>Directory</NavLink>
+            <NavLink to="/about" className="hover:text-brand3" onClick={() => setIsMenuOpen(false)}>About Us</NavLink>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
+

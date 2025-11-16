@@ -44,8 +44,8 @@ export default function MerchantPage() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-8">
-        <div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="md:col-span-2">
           <h2 className="text-2xl font-semibold mb-3">Contact</h2>
           <div className="space-y-2">
             <div>📞 {merchant.phone || "-"}</div>
@@ -105,7 +105,7 @@ export default function MerchantPage() {
           </div>
         </div>
 
-        <div>
+        <div className="md:col-span-1">
           <h2 className="text-2xl font-semibold mb-3">Reviews</h2>
           <Reviews merchantId={merchant.id} />
         </div>
