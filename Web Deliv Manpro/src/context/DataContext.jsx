@@ -109,6 +109,25 @@ export function DataProvider({ children }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Helper function untuk fetch merchant lengkap dengan menu_items dan menu_images
+  const fetchMerchantWithRelations = async (merchantId) => {
+    try {
+      const { data, error } = await supabase
+        .from("merchants")
+        .select(
+          "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id), menu_images(id, image_url, merchant_id)"
+        )
+        .eq("id", merchantId)
+        .single()
+
+      if (error) throw error
+      return data ? mapMerchantRows([data])[0] : null
+    } catch (err) {
+      console.error("Error fetching merchant:", err)
+      return null
+    }
+  }
+
   useEffect(() => {
     if (!usingSupabase) return
 
@@ -116,37 +135,225 @@ export function DataProvider({ children }) {
       .channel("manpro-sync")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "merchants" },
-        () => {
-          if (refreshTimer.current) clearTimeout(refreshTimer.current)
-          refreshTimer.current = setTimeout(fetchFromSupabase, 400)
+        { event: "INSERT", schema: "public", table: "merchants" },
+        async (payload) => {
+          const newMerchant = await fetchMerchantWithRelations(payload.new.id)
+          if (newMerchant) {
+            setMerchants((prev) => {
+              // Cek apakah sudah ada
+              if (prev.find((m) => m.id === newMerchant.id)) return prev
+              const updated = [...prev, newMerchant]
+              setJSON("merchants", updated)
+              return updated
+            })
+            setLastSyncedAt(Date.now())
+          }
         }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "menu_items" },
-        () => {
-          if (refreshTimer.current) clearTimeout(refreshTimer.current)
-          refreshTimer.current = setTimeout(fetchFromSupabase, 400)
+        { event: "UPDATE", schema: "public", table: "merchants" },
+        async (payload) => {
+          const updatedMerchant = await fetchMerchantWithRelations(payload.new.id)
+          if (updatedMerchant) {
+            setMerchants((prev) => {
+              const updated = prev.map((m) => (m.id === updatedMerchant.id ? updatedMerchant : m))
+              setJSON("merchants", updated)
+              return updated
+            })
+            setLastSyncedAt(Date.now())
+          }
         }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "menu_images" },
-        () => {
-          if (refreshTimer.current) clearTimeout(refreshTimer.current)
-          refreshTimer.current = setTimeout(fetchFromSupabase, 400)
+        { event: "DELETE", schema: "public", table: "merchants" },
+        (payload) => {
+          setMerchants((prev) => {
+            const updated = prev.filter((m) => m.id !== payload.old.id)
+            setJSON("merchants", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
         }
       )
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "recommendations" },
-        () => {
-          if (refreshTimer.current) clearTimeout(refreshTimer.current)
-          refreshTimer.current = setTimeout(fetchFromSupabase, 400)
+        { event: "INSERT", schema: "public", table: "menu_items" },
+        (payload) => {
+          const merchantId = payload.new.merchant_id
+          const newItem = {
+            id: payload.new.id,
+            name: payload.new.name,
+            price: Number(payload.new.price || 0),
+            merchant_id: merchantId,
+          }
+          setMerchants((prev) => {
+            const updated = prev.map((merchant) =>
+              merchant.id === merchantId
+                ? { ...merchant, menu: [...(merchant.menu || []), newItem] }
+                : merchant
+            )
+            setJSON("merchants", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
         }
       )
-      .subscribe()
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "menu_items" },
+        (payload) => {
+          const merchantId = payload.new.merchant_id
+          const updatedItem = {
+            id: payload.new.id,
+            name: payload.new.name,
+            price: Number(payload.new.price || 0),
+            merchant_id: merchantId,
+          }
+          setMerchants((prev) => {
+            const updated = prev.map((merchant) =>
+              merchant.id === merchantId
+                ? {
+                    ...merchant,
+                    menu: merchant.menu.map((item) =>
+                      item.id === updatedItem.id ? updatedItem : item
+                    ),
+                  }
+                : merchant
+            )
+            setJSON("merchants", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "menu_items" },
+        (payload) => {
+          const merchantId = payload.old.merchant_id
+          setMerchants((prev) => {
+            const updated = prev.map((merchant) =>
+              merchant.id === merchantId
+                ? {
+                    ...merchant,
+                    menu: merchant.menu.filter((item) => item.id !== payload.old.id),
+                  }
+                : merchant
+            )
+            setJSON("merchants", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "menu_images" },
+        (payload) => {
+          const merchantId = payload.new.merchant_id
+          const newImage = {
+            id: payload.new.id,
+            image_url: payload.new.image_url,
+            merchant_id: merchantId,
+          }
+          setMerchants((prev) => {
+            const updated = prev.map((merchant) =>
+              merchant.id === merchantId
+                ? {
+                    ...merchant,
+                    menu_images: [...(merchant.menu_images || []), newImage],
+                  }
+                : merchant
+            )
+            setJSON("merchants", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "menu_images" },
+        (payload) => {
+          const merchantId = payload.old.merchant_id
+          setMerchants((prev) => {
+            const updated = prev.map((merchant) =>
+              merchant.id === merchantId
+                ? {
+                    ...merchant,
+                    menu_images: merchant.menu_images.filter(
+                      (image) => image.id !== payload.old.id
+                    ),
+                  }
+                : merchant
+            )
+            setJSON("merchants", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "recommendations" },
+        (payload) => {
+          const newReco = sanitizeRecommendationRecord({
+            id: payload.new.id,
+            name: payload.new.name,
+            contact: payload.new.contact,
+            message: payload.new.message,
+            done: payload.new.done,
+            created_at: payload.new.created_at,
+          })
+          setRecommendations((prev) => {
+            // Cek apakah sudah ada
+            if (prev.find((r) => r.id === newReco.id)) return prev
+            const updated = [...prev, newReco]
+            setJSON("reco", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "recommendations" },
+        (payload) => {
+          const updatedReco = sanitizeRecommendationRecord({
+            id: payload.new.id,
+            name: payload.new.name,
+            contact: payload.new.contact,
+            message: payload.new.message,
+            done: payload.new.done,
+            created_at: payload.new.created_at,
+          })
+          setRecommendations((prev) => {
+            const updated = prev.map((r) => (r.id === updatedReco.id ? updatedReco : r))
+            setJSON("reco", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "recommendations" },
+        (payload) => {
+          setRecommendations((prev) => {
+            const updated = prev.filter((r) => r.id !== payload.old.id)
+            setJSON("reco", updated)
+            return updated
+          })
+          setLastSyncedAt(Date.now())
+        }
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          console.log("✅ Real-time sync aktif - perubahan database akan otomatis terupdate")
+        }
+      })
 
     return () => {
       if (refreshTimer.current) clearTimeout(refreshTimer.current)
