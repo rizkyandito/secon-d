@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { getJSON, setJSON } from "../utils/storage"
 import initialMerchants from "../data/merchants.json"
 import { supabase, isSupabaseConfigured } from "../utils/supabaseClient"
+import { sanitizeRecommendationRecord } from "../utils/sanitize"
 
 const DataContext = createContext(null)
 
@@ -43,6 +44,7 @@ export function DataProvider({ children }) {
   const hydrateFromLocal = () => {
     const localMerchants = getJSON("merchants", initialMerchants)
     const localRecommendations = getJSON("reco", [])
+      .map((item) => sanitizeRecommendationRecord(item))
     setMerchants(localMerchants)
     setRecommendations(localRecommendations)
     setIsOnline(false)
@@ -77,14 +79,16 @@ export function DataProvider({ children }) {
       if (recoRes.error) throw recoRes.error
 
       const mappedMerchants = mapMerchantRows(merchantsRes.data)
-      const mappedRecommendations = (recoRes.data || []).map((item) => ({
-        id: item.id,
-        name: item.name,
-        contact: item.contact,
-        message: item.message,
-        done: item.done,
-        created_at: item.created_at,
-      }))
+      const mappedRecommendations = (recoRes.data || []).map((item) =>
+        sanitizeRecommendationRecord({
+          id: item.id,
+          name: item.name,
+          contact: item.contact,
+          message: item.message,
+          done: item.done,
+          created_at: item.created_at,
+        })
+      )
 
       setMerchants(mappedMerchants)
       setRecommendations(mappedRecommendations)
@@ -406,25 +410,35 @@ export function DataProvider({ children }) {
   }
 
   const addRecommendation = async (payload) => {
+    const sanitizedPayload = sanitizeRecommendationRecord(payload)
+    if (!sanitizedPayload.message) {
+      throw new Error("Pesan rekomendasi tidak boleh kosong atau hanya simbol")
+    }
+
     if (usingSupabase) {
       try {
         const { data, error: insertError } = await supabase
           .from("recommendations")
-          .insert([{ ...payload, done: false }])
+          .insert([{ ...sanitizedPayload, done: false }])
           .select("id, name, contact, message, done, created_at")
           .single()
 
         if (insertError) throw insertError
 
-        setRecommendations((prev) => [...prev, data])
-        return data
+        const record = sanitizeRecommendationRecord(data)
+        setRecommendations((prev) => [...prev, record])
+        return record
       } catch (err) {
         setError(err.message)
         throw err
       }
     }
 
-    const recommendation = { id: Date.now(), ...payload, done: false }
+    const recommendation = {
+      id: Date.now(),
+      ...sanitizedPayload,
+      done: false,
+    }
     setRecommendations((prev) => [...prev, recommendation])
     return recommendation
   }

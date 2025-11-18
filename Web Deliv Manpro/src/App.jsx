@@ -15,9 +15,9 @@ export default function App() {
     <BrowserRouter>
       {user ? (
         <Routes>
-          <Route path="/admin" element={<AdminPanel />} />
-          <Route path="/" element={<Navigate to="/admin" replace />} />
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+          <Route path="/cuegua" element={<AdminPanel />} />
+          <Route path="/" element={<Navigate to="/cuegua" replace />} />
+          <Route path="*" element={<Navigate to="/cuegua" replace />} />
         </Routes>
       ) : (
         <>
@@ -28,7 +28,7 @@ export default function App() {
               <Route path="/directory" element={<Directory />} />
               <Route path="/about" element={<About />} />
               <Route path="/merchant/:id" element={<MerchantPage />} />
-              <Route path="/admin" element={<LoginPage />} />
+              <Route path="/cuegua" element={<LoginPage />} />
             </Routes>
           </main>
         </>

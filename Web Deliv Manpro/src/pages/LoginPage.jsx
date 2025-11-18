@@ -11,11 +11,11 @@ export default function LoginPage() {
     e.preventDefault();
     const r = await login(cred.username, cred.password);
     if (!r.ok) return alert(r.message);
-    navigate('/cuenua', { replace: true });
+    navigate('/cuegua', { replace: true });
   };
 
   if (user) {
-    return <Navigate to="/cuenua" replace />;
+    return <Navigate to="/cuegua" replace />;
   }
 
   return (
