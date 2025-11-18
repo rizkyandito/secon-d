@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react"
 import { useData } from "../context/DataContext.jsx"
 import MerchantCard from "../components/MerchantCard.jsx"
+import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
 
 export default function Directory() {
-  const { merchants } = useData()
+  const { merchants, isLoading } = useData()
   const [q, setQ] = useState("")
   const [cat, setCat] = useState("Semua")
 
@@ -55,13 +56,17 @@ export default function Directory() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-        {filtered.map((m) => (
-          <div key={m.id}>
-            <MerchantCard merchant={m} showReviews={true} />
-          </div>
-        ))}
-      </div>
+      {isLoading ? (
+        <MerchantListSkeleton count={6} />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {filtered.map((m) => (
+            <div key={m.id}>
+              <MerchantCard merchant={m} showReviews={true} />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

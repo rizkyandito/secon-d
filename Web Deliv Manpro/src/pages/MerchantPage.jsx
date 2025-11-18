@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import { useData } from "../context/DataContext"
 import Reviews from "../components/Reviews"
@@ -6,22 +6,41 @@ import ImageModal from "../components/ImageModal"
 
 export default function MerchantPage() {
   const { id } = useParams()
-  const { merchants, isLoading } = useData()
+  const { merchants, isLoading, fetchMerchantDetail } = useData()
   const [selectedImage, setSelectedImage] = useState(null)
+  const [loadingDetail, setLoadingDetail] = useState(false)
+
+  const merchant = merchants.find((m) => m.id.toString() === id)
+
+  // Fetch detail on-demand jika menu kosong
+  useEffect(() => {
+    if (merchant && (!merchant.menu || merchant.menu.length === 0) && fetchMerchantDetail) {
+      setLoadingDetail(true)
+      fetchMerchantDetail(Number(id)).finally(() => setLoadingDetail(false))
+    }
+  }, [merchant, id, fetchMerchantDetail])
 
   if (isLoading) {
     return (
-      <div className="animate-pulse">
-        <div className="w-48 h-8 bg-slate-200 rounded mb-4"></div>
-        <div className="w-full h-40 bg-slate-200 rounded-lg"></div>
+      <div className="p-4 animate-pulse">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-24 h-24 bg-slate-200 dark:bg-slate-700 rounded-2xl" />
+          <div>
+            <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-48 mb-2" />
+            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-32" />
+          </div>
+        </div>
+        <div className="h-40 bg-slate-200 dark:bg-slate-700 rounded-lg" />
       </div>
     )
   }
 
-  const merchant = merchants.find((m) => m.id.toString() === id)
-
   if (!merchant) {
-    return <div>Merchant not found</div>
+    return (
+      <div className="p-4">
+        <div className="text-center text-slate-500">Merchant not found</div>
+      </div>
+    )
   }
 
   return (
@@ -70,11 +89,19 @@ export default function MerchantPage() {
           </div>
 
           <div className="mt-6">
-            {(merchant.menu_images?.length > 0 || merchant.menu?.length > 0) && (
+            {(merchant.menu_images?.length > 0 || merchant.menu?.length > 0 || loadingDetail) && (
               <h2 className="text-2xl font-semibold mb-3">Menu</h2>
             )}
 
-            {merchant.menu_images?.length > 0 && (
+            {loadingDetail && (
+              <div className="animate-pulse space-y-4">
+                <div className="h-48 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+              </div>
+            )}
+
+            {!loadingDetail && merchant.menu_images?.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {merchant.menu_images.map((image) => (
                   <div

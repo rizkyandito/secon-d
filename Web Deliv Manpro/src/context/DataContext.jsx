@@ -52,22 +52,33 @@ export function DataProvider({ children }) {
     setError(null)
   }
 
-  const fetchFromSupabase = async () => {
+  const fetchFromSupabase = async (showLoading = true) => {
     if (!usingSupabase) {
       hydrateFromLocal()
       return
     }
 
     try {
-      setIsLoading(true)
+      if (showLoading) setIsLoading(true)
       setError(null)
 
+      // Optimasi: Load dari cache dulu untuk instant display
+      const cachedMerchants = getJSON("merchants", null)
+      const cachedReco = getJSON("reco", [])
+      
+      if (cachedMerchants) {
+        setMerchants(cachedMerchants)
+        setRecommendations(cachedReco.map((item) => sanitizeRecommendationRecord(item)))
+        setIsOnline(true)
+        if (showLoading) setIsLoading(false)
+      }
+
+      // Optimasi query: Fetch ringan untuk list (tanpa menu_items lengkap)
+      // Menu items akan di-fetch on-demand saat dibutuhkan
       const [merchantsRes, recoRes] = await Promise.all([
         supabase
           .from("merchants")
-          .select(
-            "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id), menu_images(id, image_url, merchant_id)"
-          )
+          .select("id, name, category, logo, phone, whatsapp")
           .order("created_at", { ascending: true }),
         supabase
           .from("recommendations")
@@ -78,7 +89,18 @@ export function DataProvider({ children }) {
       if (merchantsRes.error) throw merchantsRes.error
       if (recoRes.error) throw recoRes.error
 
-      const mappedMerchants = mapMerchantRows(merchantsRes.data)
+      // Map data dengan menu kosong (akan di-fetch on-demand)
+      const mappedMerchants = (merchantsRes.data || []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        category: row.category,
+        logo: row.logo,
+        phone: row.phone,
+        whatsapp: row.whatsapp,
+        menu: [],
+        menu_images: [],
+      }))
+      
       const mappedRecommendations = (recoRes.data || []).map((item) =>
         sanitizeRecommendationRecord({
           id: item.id,
@@ -96,7 +118,7 @@ export function DataProvider({ children }) {
       setLastSyncedAt(Date.now())
       setJSON("merchants", mappedMerchants)
       setJSON("reco", mappedRecommendations)
-      setIsLoading(false)
+      if (showLoading) setIsLoading(false)
     } catch (err) {
       console.error("Supabase fetch error:", err)
       setError(err.message || "Gagal mengambil data dari Supabase")
@@ -104,8 +126,54 @@ export function DataProvider({ children }) {
     }
   }
 
+  // Fetch merchant detail dengan menu_items (on-demand)
+  const fetchMerchantDetail = async (merchantId) => {
+    if (!usingSupabase) {
+      const merchant = merchants.find((m) => m.id === merchantId)
+      return merchant || null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("merchants")
+        .select(
+          "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id), menu_images(id, image_url, merchant_id)"
+        )
+        .eq("id", merchantId)
+        .single()
+
+      if (error) throw error
+      if (!data) return null
+
+      const fullMerchant = mapMerchantRows([data])[0]
+      
+      // Update merchant di state
+      setMerchants((prev) =>
+        prev.map((m) => (m.id === merchantId ? fullMerchant : m))
+      )
+      
+      return fullMerchant
+    } catch (err) {
+      console.error("Error fetching merchant detail:", err)
+      return merchants.find((m) => m.id === merchantId) || null
+    }
+  }
+
+  // Load dari cache dulu untuk instant display, lalu sync di background
   useEffect(() => {
-    fetchFromSupabase()
+    // Instant load dari cache
+    const cachedMerchants = getJSON("merchants", initialMerchants)
+    const cachedReco = getJSON("reco", [])
+    
+    if (cachedMerchants && cachedMerchants.length > 0) {
+      setMerchants(cachedMerchants)
+      setRecommendations(cachedReco.map((item) => sanitizeRecommendationRecord(item)))
+      setIsLoading(false)
+      setIsOnline(usingSupabase)
+    }
+    
+    // Sync di background (tanpa loading indicator)
+    fetchFromSupabase(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -710,6 +778,7 @@ export function DataProvider({ children }) {
     error,
     lastSyncedAt,
     refresh: fetchFromSupabase,
+    fetchMerchantDetail,
     usingSupabase,
   }
 

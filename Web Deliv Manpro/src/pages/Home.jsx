@@ -2,10 +2,11 @@ import { useMemo, useState } from "react"
 import { useData } from "../context/DataContext.jsx"
 import { getJSON } from "../utils/storage"
 import MerchantCard from "../components/MerchantCard.jsx"
+import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
 import RecommendationForm from "../components/RecommendationForm.jsx"
 
 export default function Home() {
-  const { merchants } = useData()
+  const { merchants, isLoading } = useData()
   const categories = useMemo(
     () => Array.from(new Set(merchants.map((m) => m.category))),
     [merchants]
@@ -45,7 +46,7 @@ export default function Home() {
           <a href="/directory" className="btn btn-primary">
             Lihat Daftar Toko
           </a>
-        </div>
+        </div>s
       </div>
 
       <RecommendationForm />
@@ -78,7 +79,9 @@ export default function Home() {
           ))}
         </div>
 
-        {tops.length ? (
+        {isLoading ? (
+          <MerchantListSkeleton count={4} />
+        ) : tops.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {tops.map((m) => (
               <MerchantCard key={m.id} merchant={m} showReviews={false} />
