@@ -4,7 +4,7 @@ export default function About(){
     {name:'Naya',photo:'/images/founders/Naya.jpg'},
     {name:'Adel',photo:'/images/founders/Adel.jpg'},
     {name:'Hazqie',photo:'/images/founders/Hazqie.png'},
-    {name:'Luqman',photo:'/images/founders/noe.jpeg'},
+    {name:'Luqman',photo:'/images/founders/noe.jpg'},
     {name:'Dito',photo:'/images/founders/Dito.jpeg'},
   ]
   return (
