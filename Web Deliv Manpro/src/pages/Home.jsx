@@ -46,7 +46,7 @@ export default function Home() {
           <a href="/directory" className="btn btn-primary">
             Lihat Daftar Toko
           </a>
-        </div>s
+        </div>
       </div>
 
       <RecommendationForm />

@@ -75,19 +75,28 @@ export function DataProvider({ children }) {
 
       // Optimasi query: Fetch ringan untuk list (tanpa menu_items lengkap)
       // Menu items akan di-fetch on-demand saat dibutuhkan
+      // Pastikan mengambil semua data tanpa limit
       const [merchantsRes, recoRes] = await Promise.all([
         supabase
           .from("merchants")
-          .select("id, name, category, logo, phone, whatsapp")
-          .order("created_at", { ascending: true }),
+          .select("id, name, category, logo, phone, whatsapp", { count: "exact" })
+          .order("created_at", { ascending: true })
+          .limit(1000), // Ambil semua (limit tinggi untuk memastikan semua data terambil)
         supabase
           .from("recommendations")
           .select("id, name, contact, message, done, created_at")
-          .order("created_at", { ascending: true }),
+          .order("created_at", { ascending: true })
+          .limit(1000),
       ])
 
       if (merchantsRes.error) throw merchantsRes.error
       if (recoRes.error) throw recoRes.error
+
+      // Debug: Log jumlah data yang diterima
+      console.log(`📊 Fetched ${merchantsRes.data?.length || 0} merchants from Supabase`)
+      if (merchantsRes.count !== null) {
+        console.log(`📊 Total count in database: ${merchantsRes.count}`)
+      }
 
       // Map data dengan menu kosong (akan di-fetch on-demand)
       const mappedMerchants = (merchantsRes.data || []).map((row) => ({
@@ -101,6 +110,8 @@ export function DataProvider({ children }) {
         menu_images: [],
       }))
       
+      console.log(`✅ Mapped ${mappedMerchants.length} merchants`)
+      
       const mappedRecommendations = (recoRes.data || []).map((item) =>
         sanitizeRecommendationRecord({
           id: item.id,
@@ -112,12 +123,15 @@ export function DataProvider({ children }) {
         })
       )
 
+      // Update state dan cache
       setMerchants(mappedMerchants)
       setRecommendations(mappedRecommendations)
       setIsOnline(true)
       setLastSyncedAt(Date.now())
       setJSON("merchants", mappedMerchants)
       setJSON("reco", mappedRecommendations)
+      
+      console.log(`💾 Saved ${mappedMerchants.length} merchants to cache`)
       if (showLoading) setIsLoading(false)
     } catch (err) {
       console.error("Supabase fetch error:", err)
@@ -161,18 +175,24 @@ export function DataProvider({ children }) {
 
   // Load dari cache dulu untuk instant display, lalu sync di background
   useEffect(() => {
-    // Instant load dari cache
-    const cachedMerchants = getJSON("merchants", initialMerchants)
+    // Instant load dari cache (hanya jika ada dan tidak kosong)
+    const cachedMerchants = getJSON("merchants", null)
     const cachedReco = getJSON("reco", [])
     
-    if (cachedMerchants && cachedMerchants.length > 0) {
+    if (cachedMerchants && Array.isArray(cachedMerchants) && cachedMerchants.length > 0) {
+      console.log(`📦 Loading ${cachedMerchants.length} merchants from cache`)
       setMerchants(cachedMerchants)
       setRecommendations(cachedReco.map((item) => sanitizeRecommendationRecord(item)))
       setIsLoading(false)
       setIsOnline(usingSupabase)
+    } else {
+      // Jika cache kosong atau tidak valid, langsung fetch
+      console.log("📦 No valid cache found, fetching from Supabase...")
+      fetchFromSupabase(true)
+      return
     }
     
-    // Sync di background (tanpa loading indicator)
+    // Sync di background (tanpa loading indicator) untuk update data terbaru
     fetchFromSupabase(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
