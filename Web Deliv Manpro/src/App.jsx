@@ -7,43 +7,32 @@ import AdminPanel from './pages/AdminPanel.jsx'
 import MerchantPage from './pages/MerchantPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import { useAuth } from './context/AuthContext.jsx'
-import { useData } from './context/DataContext.jsx'
-import LoadingScreen from './components/LoadingScreen.jsx'
 
 export default function App() {
   const { user } = useAuth()
-  const { isLoading } = useData()
 
-  if (isLoading) {
-    return <LoadingScreen />
-  }
-
-  // Jika admin login, langsung render AdminPanel saja
-  if (user) {
-    return (
-      <BrowserRouter>
-        <Routes>
-          <Route path="/cuenua" element={<AdminPanel />} />
-          {/* kalau admin buka / atau halaman lain → redirect ke /cuenua */}
-          <Route path="*" element={<Navigate to="/cuenua" replace />} />
-        </Routes>
-      </BrowserRouter>
-    )
-  }
-
-  // Jika belum login → tampilan normal
   return (
     <BrowserRouter>
-      <Navbar />
-      <main>
+      {user ? (
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/directory" element={<Directory />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/merchant/:id" element={<MerchantPage />} />
-          <Route path="/cuenua" element={<LoginPage />} />
+          <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/" element={<Navigate to="/admin" replace />} />
+          <Route path="*" element={<Navigate to="/admin" replace />} />
         </Routes>
-      </main>
+      ) : (
+        <>
+          <Navbar />
+          <main>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/directory" element={<Directory />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/merchant/:id" element={<MerchantPage />} />
+              <Route path="/admin" element={<LoginPage />} />
+            </Routes>
+          </main>
+        </>
+      )}
     </BrowserRouter>
   )
 }
