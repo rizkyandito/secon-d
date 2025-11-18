@@ -28,6 +28,7 @@ export default function AdminPanel() {
     lastSyncedAt,
     usingSupabase,
     refresh,
+    clearCache,
   } = useData()
 
   const [form, setForm] = useState({
@@ -237,13 +238,26 @@ export default function AdminPanel() {
           <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
             {statusLabel()}
             {usingSupabase && (
-              <button
-                onClick={refresh}
-                className="btn btn-outline btn-sm"
-                disabled={isLoading}
-              >
-                🔄 Refresh
-              </button>
+              <>
+                <button
+                  onClick={refresh}
+                  className="btn btn-outline btn-sm"
+                  disabled={isLoading}
+                >
+                  🔄 Refresh
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Yakin ingin clear cache? Data akan di-reload dari Supabase.")) {
+                      clearCache()
+                    }
+                  }}
+                  className="btn btn-outline btn-sm text-amber-600 border-amber-300"
+                  disabled={isLoading}
+                >
+                  🗑️ Clear Cache
+                </button>
+              </>
             )}
           </p>
         </div>

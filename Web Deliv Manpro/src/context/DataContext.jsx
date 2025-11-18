@@ -75,40 +75,74 @@ export function DataProvider({ children }) {
 
       // Optimasi query: Fetch ringan untuk list (tanpa menu_items lengkap)
       // Menu items akan di-fetch on-demand saat dibutuhkan
-      // Pastikan mengambil semua data tanpa limit
-      const [merchantsRes, recoRes] = await Promise.all([
-        supabase
+      // Fetch dengan pagination untuk memastikan semua data terambil
+      let allMerchants = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
+      
+      // Fetch semua merchants dengan pagination
+      while (hasMore) {
+        const { data, error, count } = await supabase
           .from("merchants")
           .select("id, name, category, logo, phone, whatsapp", { count: "exact" })
           .order("created_at", { ascending: true })
-          .limit(1000), // Ambil semua (limit tinggi untuk memastikan semua data terambil)
-        supabase
-          .from("recommendations")
-          .select("id, name, contact, message, done, created_at")
-          .order("created_at", { ascending: true })
-          .limit(1000),
-      ])
-
-      if (merchantsRes.error) throw merchantsRes.error
+          .range(page * pageSize, (page + 1) * pageSize - 1)
+        
+        if (error) throw error
+        
+        if (data && data.length > 0) {
+          allMerchants = [...allMerchants, ...data]
+          console.log(`📄 Page ${page + 1}: Fetched ${data.length} merchants (Total so far: ${allMerchants.length})`)
+          
+          if (count !== null) {
+            console.log(`📊 Total in database: ${count}`)
+            if (allMerchants.length >= count) {
+              hasMore = false
+            }
+          }
+          
+          if (data.length < pageSize) {
+            hasMore = false
+          } else {
+            page++
+          }
+        } else {
+          hasMore = false
+        }
+      }
+      
+      // Fetch recommendations
+      const recoRes = await supabase
+        .from("recommendations")
+        .select("id, name, contact, message, done, created_at")
+        .order("created_at", { ascending: true })
+        .limit(1000)
+      
       if (recoRes.error) throw recoRes.error
+      
+      const merchantsRes = { data: allMerchants, error: null }
 
       // Debug: Log jumlah data yang diterima
-      console.log(`📊 Fetched ${merchantsRes.data?.length || 0} merchants from Supabase`)
-      if (merchantsRes.count !== null) {
-        console.log(`📊 Total count in database: ${merchantsRes.count}`)
-      }
+      console.log(`📊 Total fetched: ${merchantsRes.data?.length || 0} merchants from Supabase`)
 
       // Map data dengan menu kosong (akan di-fetch on-demand)
-      const mappedMerchants = (merchantsRes.data || []).map((row) => ({
-        id: row.id,
-        name: row.name,
-        category: row.category,
-        logo: row.logo,
-        phone: row.phone,
-        whatsapp: row.whatsapp,
-        menu: [],
-        menu_images: [],
-      }))
+      const mappedMerchants = (merchantsRes.data || []).map((row) => {
+        if (!row || !row.id) {
+          console.warn("⚠️ Invalid merchant row:", row)
+          return null
+        }
+        return {
+          id: row.id,
+          name: row.name,
+          category: row.category,
+          logo: row.logo,
+          phone: row.phone,
+          whatsapp: row.whatsapp,
+          menu: [],
+          menu_images: [],
+        }
+      }).filter(Boolean) // Filter out null values
       
       console.log(`✅ Mapped ${mappedMerchants.length} merchants`)
       
