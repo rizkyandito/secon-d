@@ -23,9 +23,9 @@ export default function App() {
     return (
       <BrowserRouter>
         <Routes>
-          <Route path="/admin" element={<AdminPanel />} />
-          {/* kalau admin buka / atau halaman lain → redirect ke /admin */}
-          <Route path="*" element={<Navigate to="/admin" replace />} />
+          <Route path="/cuenua" element={<AdminPanel />} />
+          {/* kalau admin buka / atau halaman lain → redirect ke /cuenua */}
+          <Route path="*" element={<Navigate to="/cuenua" replace />} />
         </Routes>
       </BrowserRouter>
     )
@@ -41,7 +41,7 @@ export default function App() {
           <Route path="/directory" element={<Directory />} />
           <Route path="/about" element={<About />} />
           <Route path="/merchant/:id" element={<MerchantPage />} />
-          <Route path="/admin" element={<LoginPage />} />
+          <Route path="/cuenua" element={<LoginPage />} />
         </Routes>
       </main>
     </BrowserRouter>

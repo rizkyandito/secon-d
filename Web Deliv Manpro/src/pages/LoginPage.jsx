@@ -11,11 +11,11 @@ export default function LoginPage() {
     e.preventDefault();
     const r = await login(cred.username, cred.password);
     if (!r.ok) return alert(r.message);
-    navigate('/admin', { replace: true });
+    navigate('/cuenua', { replace: true });
   };
 
   if (user) {
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/cuenua" replace />;
   }
 
   return (
@@ -38,7 +38,7 @@ export default function LoginPage() {
           />
           <button className="btn btn-primary w-full">Masuk</button>
         </form>
-        <div className="text-xs text-slate-500 mt-2 text-center">Demo: admin / admin</div>
+        <div className="text-xs text-slate-500 mt-2 text-center"></div>
       </div>
     </div>
   );
