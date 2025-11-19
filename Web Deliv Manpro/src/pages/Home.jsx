@@ -7,15 +7,16 @@ import RecommendationForm from "../components/RecommendationForm.jsx"
 import { CATEGORIES } from "../data/constants.js"
 
 export default function Home() {
-  const { merchants, isLoading } = useData()
+  const { homePageMerchants, isLoading } = useData()
   const categories = CATEGORIES
   const [activeCat, setActiveCat] = useState("Semua")
 
   const topByCategory = (cat, limit = 10) => {
+    const sourceMerchants = homePageMerchants || []
     const same =
       cat === "Semua"
-        ? merchants
-        : merchants.filter((m) => m.category === cat)
+        ? sourceMerchants
+        : sourceMerchants.filter((m) => m.category === cat)
 
     const withRatings = same.map((m) => {
       const reviews = getJSON("reviews_" + m.id, [])

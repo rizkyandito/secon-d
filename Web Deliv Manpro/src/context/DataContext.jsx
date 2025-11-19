@@ -30,6 +30,7 @@ const mapMerchantRows = (rows = [], detailFetched = false) =>
 
 export function DataProvider({ children }) {
   const [merchants, setMerchants] = useState([])
+  const [homePageMerchants, setHomePageMerchants] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -204,6 +205,25 @@ export function DataProvider({ children }) {
   useEffect(() => {
     fetchRecommendations()
   }, [fetchRecommendations])
+
+  const fetchHomePageMerchants = useCallback(async () => {
+    if (!usingSupabase) return
+    try {
+      const { data, error } = await supabase
+        .from("merchants")
+        .select("id, name, category, logo, phone, whatsapp")
+        .order("created_at", { ascending: false })
+        .limit(100)
+      if (error) throw error
+      setHomePageMerchants(mapMerchantRows(data, false))
+    } catch (err) {
+      console.error("Failed to fetch home page merchants:", err)
+    }
+  }, [usingSupabase])
+
+  useEffect(() => {
+    fetchHomePageMerchants()
+  }, [fetchHomePageMerchants])
   const fetchMerchantWithRelations = async (merchantId) => {
     try {
       const { data, error } = await supabase
@@ -787,6 +807,7 @@ export function DataProvider({ children }) {
 
   const contextValue = {
     merchants,
+    homePageMerchants,
     addMerchant,
     updateMerchant,
     removeMerchant,
