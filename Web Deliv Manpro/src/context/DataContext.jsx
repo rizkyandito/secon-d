@@ -6,7 +6,7 @@ import { sanitizeRecommendationRecord } from "../utils/sanitize"
 
 const DataContext = createContext(null)
 
-const mapMerchantRows = (rows = []) =>
+const mapMerchantRows = (rows = [], detailFetched = false) =>
   rows.map((row) => ({
     id: row.id,
     name: row.name,
@@ -25,6 +25,7 @@ const mapMerchantRows = (rows = []) =>
       image_url: item.image_url,
       merchant_id: item.merchant_id,
     })),
+    detailFetched,
   }))
 
 export function DataProvider({ children }) {
@@ -170,6 +171,7 @@ export function DataProvider({ children }) {
           whatsapp: row.whatsapp,
           menu: [],
           menu_images: [],
+          detailFetched: false,
         }
       }).filter(Boolean) // Filter out null values
       
@@ -248,7 +250,7 @@ export function DataProvider({ children }) {
         menu_images: data.menu_images
       })
 
-      const fullMerchant = mapMerchantRows([data])[0]
+      const fullMerchant = mapMerchantRows([data], true)[0]
       console.log(`✅ Mapped merchant: ${fullMerchant.menu?.length || 0} menu items, ${fullMerchant.menu_images?.length || 0} images`)
       
       if (fullMerchant.menu_images && fullMerchant.menu_images.length > 0) {
@@ -304,7 +306,7 @@ export function DataProvider({ children }) {
         .single()
 
       if (error) throw error
-      return data ? mapMerchantRows([data])[0] : null
+      return data ? mapMerchantRows([data], true)[0] : null
     } catch (err) {
       console.error("Error fetching merchant:", err)
       return null

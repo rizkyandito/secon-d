@@ -12,10 +12,17 @@ export default function MerchantPage() {
 
   const merchant = merchants.find((m) => m.id.toString() === id)
 
-  // Fetch detail hanya jika menu/menu_images belum lengkap
+  // Fetch detail hanya jika belum ada
   useEffect(() => {
+    const merchant = merchants.find((m) => m.id.toString() === id)
+
     if (!merchant) {
       console.log(`⏳ Merchant ${id} not found yet, waiting...`)
+      return
+    }
+
+    if (merchant.detailFetched) {
+      console.log(`✅ Merchant ${id} already has full details.`)
       return
     }
 
@@ -24,36 +31,14 @@ export default function MerchantPage() {
       return
     }
 
-    const hasMenu = !!(merchant.menu && merchant.menu.length)
-    const hasMenuImages = !!(merchant.menu_images && merchant.menu_images.length)
-
-    console.log(`🔍 Checking merchant ${merchant.id}: menu=${hasMenu}, images=${hasMenuImages}`)
-
-    if (hasMenu && hasMenuImages) {
-      console.log(`✅ Merchant ${merchant.id} already has complete data`)
-      return
-    }
-
-    console.log(`🔄 Fetching detail for merchant ${merchant.id} (menu: ${hasMenu}, images: ${hasMenuImages})`)
+    console.log(`🔄 Fetching detail for merchant ${id}`)
     setLoadingDetail(true)
     fetchMerchantDetail(merchant.id)
-      .then((detail) => {
-        if (detail) {
-          console.log(`✅ Merchant detail loaded: ${detail.menu?.length || 0} menu items, ${detail.menu_images?.length || 0} images`)
-          if (detail.menu_images && detail.menu_images.length > 0) {
-            console.log(`🖼️ Menu images found:`, detail.menu_images.map((img) => img.image_url))
-          } else {
-            console.warn(`⚠️ No menu images found for merchant ${merchant.id}`)
-          }
-        } else {
-          console.warn(`⚠️ No detail returned for merchant ${merchant.id}`)
-        }
-      })
       .catch((err) => {
         console.error("❌ Error fetching merchant detail:", err)
       })
       .finally(() => setLoadingDetail(false))
-  }, [merchant, id, fetchMerchantDetail])
+  }, [id, merchants, fetchMerchantDetail])
 
   if (isLoading) {
     return (
