@@ -33,7 +33,7 @@ export default function MerchantPage() {
     // Karena data awal hanya fetch ringan tanpa menu_images
     console.log(`🔄 Always fetching detail for merchant ${id} to ensure menu_images are loaded`)
     setLoadingDetail(true)
-    fetchMerchantDetail(Number(id))
+    fetchMerchantDetail(merchant.id)
       .then((detail) => {
         if (detail) {
           console.log(`✅ Merchant detail loaded: ${detail.menu?.length || 0} menu items, ${detail.menu_images?.length || 0} images`)
