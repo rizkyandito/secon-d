@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import { useData } from "../context/DataContext.jsx"
 import MerchantCard from "../components/MerchantCard.jsx"
 import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
 
 export default function Directory() {
-  const { merchants, isLoading } = useData()
+  const { merchants, isLoading, loadMoreMerchants, pagination } = useData()
   const [q, setQ] = useState("")
   const [cat, setCat] = useState("Semua")
 
@@ -14,6 +14,9 @@ export default function Directory() {
   )
 
   const filtered = useMemo(() => {
+    if (q === "" && cat === "Semua") {
+      return merchants
+    }
     return merchants.filter((m) => {
       const byCat = cat === "Semua" || m.category === cat
       const byText = (
@@ -28,6 +31,22 @@ export default function Directory() {
       return byCat && byText
     })
   }, [merchants, q, cat])
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+          document.documentElement.offsetHeight - 200 &&
+        !isLoading &&
+        pagination.hasMore
+      ) {
+        loadMoreMerchants()
+      }
+    }
+    window.addEventListener("scroll", handleScroll)
+    return () => window.removeEventListener("scroll", handleScroll)
+  }, [isLoading, pagination.hasMore, loadMoreMerchants])
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -52,20 +71,33 @@ export default function Directory() {
           ))}
         </select>
         <div className="text-sm text-slate-500 self-center">
-          Total: {filtered.length} toko
+          Menampilkan: {filtered.length} toko
         </div>
       </div>
+      
+      {q !== "" && <p className="text-sm text-slate-500 mt-2">Pencarian dilakukan pada data yang sudah dimuat. Scroll ke bawah untuk memuat lebih banyak.</p>}
 
-      {isLoading ? (
+      {isLoading && merchants.length === 0 ? (
         <MerchantListSkeleton count={6} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-          {filtered.map((m) => (
-            <div key={m.id}>
-              <MerchantCard merchant={m} showReviews={true} />
-            </div>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            {filtered.map((m) => (
+              <div key={m.id}>
+                <MerchantCard merchant={m} showReviews={true} />
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-center mt-6">
+            {isLoading && merchants.length > 0 && (
+              <div className="text-slate-500">Memuat lebih banyak...</div>
+            )}
+            {!isLoading && !pagination.hasMore && (
+              <div className="text-slate-500">-- Anda telah mencapai akhir --</div>
+            )}
+          </div>
+        </>
       )}
     </div>
   )
