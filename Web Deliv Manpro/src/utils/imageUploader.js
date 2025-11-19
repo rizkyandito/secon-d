@@ -10,7 +10,7 @@ export const uploadImage = async (file) => {
 
   const fileExt = file.name.split('.').pop();
   const fileName = `${Date.now()}.${fileExt}`;
-  const filePath = `menu-images/${fileName}`;
+  const filePath = fileName;
 
   const { error: uploadError, data: uploadData } = await supabase.storage
     .from('menu-images')
