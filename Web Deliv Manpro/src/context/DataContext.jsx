@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react"
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { getJSON, setJSON } from "../utils/storage"
 import initialMerchants from "../data/merchants.json"
 import { supabase, isSupabaseConfigured } from "../utils/supabaseClient"
@@ -43,7 +43,7 @@ export function DataProvider({ children }) {
     []
   )
 
-  const hydrateFromLocal = () => {
+  const hydrateFromLocal = useCallback(() => {
     const localMerchants = getJSON("merchants", initialMerchants)
     const localRecommendations = getJSON("reco", [])
       .map((item) => sanitizeRecommendationRecord(item))
@@ -53,9 +53,9 @@ export function DataProvider({ children }) {
     setIsLoading(false)
     setError(null)
     setPagination({ page: 0, hasMore: false }) // No more loading from local
-  }
+  }, [])
 
-  const fetchMerchants = async (page = 0, pageSize = 20) => {
+  const fetchMerchants = useCallback(async (page = 0, pageSize = 20) => {
     if (!usingSupabase) {
       if (page === 0) hydrateFromLocal()
       return
@@ -101,18 +101,17 @@ export function DataProvider({ children }) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [usingSupabase, hydrateFromLocal])
 
-  const loadMoreMerchants = () => {
+  const loadMoreMerchants = useCallback(() => {
     if (isLoading || !pagination.hasMore) return
     fetchMerchants(pagination.page)
-  }
+  }, [isLoading, pagination, fetchMerchants])
 
   // Initial data load
   useEffect(() => {
     fetchMerchants(0)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchMerchants])
 
   // Fetch recommendations (can still be fetched all at once if not too many)
   useEffect(() => {
@@ -135,11 +134,11 @@ export function DataProvider({ children }) {
     fetchRecommendations()
   }, [usingSupabase])
   
-  const refresh = () => {
+  const refresh = useCallback(() => {
     setMerchants([])
     setPagination({ page: 0, hasMore: true })
     fetchMerchants(0)
-  }
+  }, [fetchMerchants])
 
   // Helper function untuk fetch merchant lengkap dengan menu_items dan menu_images
   const fetchMerchantWithRelations = async (merchantId) => {
