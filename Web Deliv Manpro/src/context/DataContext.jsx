@@ -741,7 +741,9 @@ export function DataProvider({ children }) {
     isOnline,
     error,
     lastSyncedAt,
-    refresh: fetchFromSupabase,
+    refresh,
+    loadMoreMerchants,
+    pagination,
     fetchMerchantDetail,
     usingSupabase,
   }
