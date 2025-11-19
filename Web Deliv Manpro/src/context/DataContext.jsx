@@ -68,8 +68,6 @@ export function DataProvider({ children }) {
       const from = page * pageSize
       const to = from + pageSize - 1
 
-      console.log(`🚀 Fetching merchants page ${page + 1} (from ${from} to ${to})`)
-
       const { data, error: fetchError, count } = await supabase
         .from("merchants")
         .select("id, name, category, logo, phone, whatsapp", { count: "exact" })
@@ -88,14 +86,10 @@ export function DataProvider({ children }) {
       setIsOnline(true)
       setLastSyncedAt(Date.now())
       
-      // Cache only the first page for faster initial loads
       if (page === 0) {
         setJSON("merchants", mappedMerchants)
       }
-
-      console.log(`✅ Fetched ${mappedMerchants.length} merchants. Has more: ${hasMore}`)
     } catch (err) {
-      console.error("Supabase fetch error:", err)
       setError(err.message || "Gagal mengambil data dari Supabase")
       hydrateFromLocal()
     } finally {
@@ -108,14 +102,80 @@ export function DataProvider({ children }) {
     fetchMerchants(pagination.page)
   }, [isLoading, pagination, fetchMerchants])
 
-  // Initial data load
+  // Fetch merchant detail dengan menu_items dan menu_images (on-demand)
+  const fetchMerchantDetail = async (merchantId) => {
+    if (!usingSupabase) {
+      const merchant = merchants.find((m) => m.id === merchantId)
+      return merchant || null
+    }
+
+    try {
+      console.log(`🔍 Fetching full detail for merchant ${merchantId}...`)
+      
+      // Fetch merchant dengan menu_items dan menu_images
+      const { data, error } = await supabase
+        .from("merchants")
+        .select(
+          "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id), menu_images(id, image_url, merchant_id)"
+        )
+        .eq("id", merchantId)
+        .single()
+
+      if (error) {
+        console.error("❌ Supabase error:", error)
+        throw error
+      }
+      if (!data) {
+        console.warn(`⚠️ No data found for merchant ${merchantId}`)
+        return null
+      }
+
+      console.log(`📦 Raw data from Supabase:`, {
+        merchant_id: data.id,
+        menu_items_count: data.menu_items?.length || 0,
+        menu_images_count: data.menu_images?.length || 0,
+        menu_images: data.menu_images
+      })
+
+      const fullMerchant = mapMerchantRows([data], true)[0]
+      console.log(`✅ Mapped merchant: ${fullMerchant.menu?.length || 0} menu items, ${fullMerchant.menu_images?.length || 0} images`)
+      
+      if (fullMerchant.menu_images && fullMerchant.menu_images.length > 0) {
+        console.log(`🖼️ Menu images URLs:`, fullMerchant.menu_images.map(img => img.image_url))
+      } else {
+        console.warn(`⚠️ No menu_images in mapped merchant!`)
+      }
+      
+      // Update merchant di state dan cache
+      setMerchants((prev) => {
+        const updated = prev.map((m) => (m.id === merchantId ? fullMerchant : m))
+        setJSON("merchants", updated)
+        console.log(`💾 Updated merchant ${merchantId} in state and cache`)
+        return updated
+      })
+      
+      return fullMerchant
+    } catch (err) {
+      console.error("❌ Error fetching merchant detail:", err)
+      const fallback = merchants.find((m) => m.id === merchantId) || null
+      if (fallback) {
+        console.log("Using cached merchant data as fallback")
+      }
+      return fallback
+    }
+  }
+
   useEffect(() => {
     fetchMerchants(0)
   }, [fetchMerchants])
 
-  // Fetch recommendations (can still be fetched all at once if not too many)
-  useEffect(() => {
-    const fetchRecommendations = async () => {
+  const refresh = useCallback(() => {
+    setMerchants([])
+    setPagination({ page: 0, hasMore: true })
+    fetchMerchants(0)
+  }, [fetchMerchants])
+
+  const fetchRecommendations = useCallback(async () => {
       if (!usingSupabase) return
       try {
         const { data, error } = await supabase
@@ -130,17 +190,11 @@ export function DataProvider({ children }) {
       } catch (err) {
         console.error("Failed to fetch recommendations:", err)
       }
-    }
-    fetchRecommendations()
-  }, [usingSupabase])
-  
-  const refresh = useCallback(() => {
-    setMerchants([])
-    setPagination({ page: 0, hasMore: true })
-    fetchMerchants(0)
-  }, [fetchMerchants])
+    }, [usingSupabase])
 
-  // Helper function untuk fetch merchant lengkap dengan menu_items dan menu_images
+  useEffect(() => {
+    fetchRecommendations()
+  }, [fetchRecommendations])
   const fetchMerchantWithRelations = async (merchantId) => {
     try {
       const { data, error } = await supabase
