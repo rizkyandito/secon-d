@@ -62,62 +62,80 @@ export function DataProvider({ children }) {
       if (showLoading) setIsLoading(true)
       setError(null)
 
-      // Optimasi query: Fetch ringan untuk list (tanpa menu_items lengkap)
-      // Menu items akan di-fetch on-demand saat dibutuhkan
-      // Fetch SEMUA data dengan pagination yang benar
-      let allMerchants = []
-      let page = 0
-      const pageSize = 1000
-      let totalCount = null
-      let hasMore = true
-      
+      // Fetch SEMUA data - coba beberapa metode untuk memastikan semua data terambil
       console.log("🚀 Starting fetch from Supabase...")
       
-      // Fetch semua merchants dengan pagination
-      while (hasMore) {
-        const from = page * pageSize
-        const to = from + pageSize - 1
-        
-        console.log(`📄 Fetching page ${page + 1} (range: ${from} to ${to})...`)
-        
-        // Fetch tanpa limit untuk memastikan semua data terambil
+      let allMerchants = []
+      
+      // Method 1: Coba fetch semua sekaligus tanpa pagination (jika < 1000 rows)
+      try {
         const { data, error, count } = await supabase
           .from("merchants")
           .select("id, name, category, logo, phone, whatsapp", { count: "exact" })
-          .order("id", { ascending: true }) // Gunakan id untuk konsistensi
-          .range(from, to)
+          .order("created_at", { ascending: true })
         
         if (error) {
-          console.error("❌ Supabase error:", error)
+          console.error("❌ Supabase error (method 1):", error)
           throw error
         }
         
-        // Set total count dari response pertama
-        if (totalCount === null && count !== null) {
-          totalCount = count
-          console.log(`📊 Total merchants in database: ${totalCount}`)
+        if (count !== null) {
+          console.log(`📊 Total merchants in database: ${count}`)
         }
         
         if (data && data.length > 0) {
-          allMerchants = [...allMerchants, ...data]
-          console.log(`✅ Page ${page + 1}: Fetched ${data.length} merchants (Total: ${allMerchants.length}/${totalCount || '?'})`)
+          allMerchants = data
+          console.log(`✅ Method 1: Fetched ${data.length} merchants (Expected: ${count || '?'})`)
           
-          // Stop jika sudah dapat semua data
-          if (totalCount !== null && allMerchants.length >= totalCount) {
-            console.log(`🎯 All ${totalCount} merchants fetched!`)
-            hasMore = false
-          } else if (data.length < pageSize) {
-            // Stop jika data kurang dari pageSize (sudah habis)
-            console.log(`🏁 Last page reached (got ${data.length} < ${pageSize})`)
-            hasMore = false
-          } else {
-            page++
+          // Validasi: jika count ada dan data kurang, ada masalah
+          if (count !== null && data.length < count) {
+            console.warn(`⚠️ Warning: Only fetched ${data.length} of ${count} merchants!`)
+            console.warn(`⚠️ This might be due to RLS policy or query limit`)
+            
+            // Coba method 2: dengan pagination
+            console.log("🔄 Trying pagination method...")
+            let page = 0
+            const pageSize = 1000
+            let hasMore = true
+            allMerchants = []
+            
+            while (hasMore) {
+              const from = page * pageSize
+              const to = from + pageSize - 1
+              
+              const { data: pageData, error: pageError } = await supabase
+                .from("merchants")
+                .select("id, name, category, logo, phone, whatsapp")
+                .order("created_at", { ascending: true })
+                .range(from, to)
+              
+              if (pageError) {
+                console.error(`❌ Error on page ${page + 1}:`, pageError)
+                break
+              }
+              
+              if (pageData && pageData.length > 0) {
+                allMerchants = [...allMerchants, ...pageData]
+                console.log(`📄 Page ${page + 1}: Fetched ${pageData.length} merchants (Total: ${allMerchants.length})`)
+                
+                if (pageData.length < pageSize) {
+                  hasMore = false
+                } else {
+                  page++
+                }
+              } else {
+                hasMore = false
+              }
+            }
+            
+            console.log(`✅ Pagination method: Fetched ${allMerchants.length} merchants`)
           }
         } else {
-          // No more data
-          console.log(`🏁 No more data on page ${page + 1}`)
-          hasMore = false
+          console.warn("⚠️ No data returned from Supabase")
         }
+      } catch (err) {
+        console.error("❌ Error in fetch method 1:", err)
+        throw err
       }
       
       // Fetch recommendations
@@ -129,7 +147,13 @@ export function DataProvider({ children }) {
       
       if (recoRes.error) throw recoRes.error
       
+      // Validasi final count
       console.log(`📊 Final count: ${allMerchants.length} merchants fetched`)
+      
+      if (allMerchants.length === 0) {
+        console.error("❌ CRITICAL: No merchants fetched! Check Supabase connection and RLS policies.")
+        throw new Error("No merchants data available")
+      }
       
       // Map data dengan menu kosong (akan di-fetch on-demand)
       const mappedMerchants = allMerchants.map((row) => {
@@ -153,6 +177,12 @@ export function DataProvider({ children }) {
       
       if (mappedMerchants.length !== allMerchants.length) {
         console.warn(`⚠️ Warning: ${allMerchants.length - mappedMerchants.length} merchants were filtered out`)
+      }
+      
+      // Final validation
+      if (mappedMerchants.length < 50) {
+        console.warn(`⚠️ WARNING: Only ${mappedMerchants.length} merchants loaded. Expected more.`)
+        console.warn(`⚠️ This might indicate a problem with RLS policies or data access.`)
       }
       
       const mappedRecommendations = (recoRes.data || []).map((item) =>
@@ -246,10 +276,17 @@ export function DataProvider({ children }) {
     }
   }
 
-  // Load dari cache dulu untuk instant display, lalu sync di background
+  // Load data - force fetch untuk memastikan data lengkap
   useEffect(() => {
-    // FORCE FETCH - Jangan gunakan cache yang mungkin tidak lengkap
-    // Langsung fetch fresh data dari Supabase
+    // Clear cache lama yang mungkin tidak lengkap
+    const cachedMerchants = getJSON("merchants", null)
+    if (cachedMerchants && cachedMerchants.length < 50) {
+      console.log(`🗑️ Clearing incomplete cache (${cachedMerchants.length} merchants)...`)
+      localStorage.removeItem("merchants")
+      localStorage.removeItem("reco")
+    }
+    
+    // FORCE FETCH - Langsung fetch fresh data dari Supabase
     console.log("🔄 Force fetching fresh data from Supabase...")
     fetchFromSupabase(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
