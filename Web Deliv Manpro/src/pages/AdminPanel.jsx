@@ -40,6 +40,8 @@ export default function AdminPanel() {
   })
   const [editId, setEditId] = useState(null)
   const [notification, setNotification] = useState(null)
+  const [newMenuItems, setNewMenuItems] = useState([])
+  const [newMenuImages, setNewMenuImages] = useState([])
 
   if (!user) return <Navigate to="/" replace />
 
@@ -57,6 +59,36 @@ export default function AdminPanel() {
     }
   }
 
+  const handleNewMenuImageFile = (e, index) => {
+    const file = e.target.files[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const updatedMenuItems = [...newMenuItems]
+        updatedMenuItems[index].image = reader.result
+        updatedMenuItems[index].file = file // Store file object for upload
+        setNewMenuItems(updatedMenuItems)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const addMenuItemField = () => {
+    setNewMenuItems([...newMenuItems, { name: "", price: "", image: null, file: null }])
+  }
+
+  const removeMenuItemField = (index) => {
+    const updatedMenuItems = [...newMenuItems]
+    updatedMenuItems.splice(index, 1)
+    setNewMenuItems(updatedMenuItems)
+  }
+
+  const handleNewMenuItemChange = (e, index, field) => {
+    const updatedMenuItems = [...newMenuItems]
+    updatedMenuItems[index][field] = e.target.value
+    setNewMenuItems(updatedMenuItems)
+  }
+
   const resetForm = () => {
     setForm({
       name: "",
@@ -65,6 +97,7 @@ export default function AdminPanel() {
       phone: "",
       whatsapp: "",
     })
+    setNewMenuItems([])
   }
 
   const submit = async (e) => {
@@ -75,12 +108,43 @@ export default function AdminPanel() {
     }
 
     try {
+      showNotification("⏳ Menyimpan toko...", "info")
+
+      // 1. Upload logo if it's a new file (base64 string)
+      let logoUrl = form.logo
+      if (logoUrl && logoUrl.startsWith('data:image')) {
+        const logoFile = await (await fetch(logoUrl)).blob()
+        logoUrl = await uploadImage(logoFile, `logo_${Date.now()}`)
+      }
+
+      // 2. Upload menu images and prepare menu data
+      const menuWithImageUrls = await Promise.all(
+        newMenuItems.map(async (item) => {
+          let imageUrl = null
+          if (item.file) {
+            imageUrl = await uploadImage(item.file, `menu_${Date.now()}`)
+          }
+          return {
+            name: item.name,
+            price: Number(item.price),
+            image: imageUrl,
+          }
+        })
+      )
+
+      const merchantData = {
+        ...form,
+        logo: logoUrl,
+        menu: menuWithImageUrls,
+        menu_images: menuWithImageUrls.filter(m => m.image).map(m => ({ image_url: m.image }))
+      }
+
       if (editId) {
-        await updateMerchant(editId, form)
+        await updateMerchant(editId, merchantData)
         setEditId(null)
         showNotification("✅ Toko berhasil diperbarui!", "success")
       } else {
-        await addMerchant({ ...form, menu: [] })
+        await addMerchant(merchantData)
         showNotification("✅ Toko berhasil ditambahkan!", "success")
       }
       resetForm()
@@ -98,6 +162,7 @@ export default function AdminPanel() {
       phone: m.phone,
       whatsapp: m.whatsapp,
     })
+    setNewMenuItems(m.menu || []) // Allow editing existing menu items
   }
 
   const cancelEdit = () => {
@@ -324,7 +389,65 @@ export default function AdminPanel() {
               />
             )}
           </div>
-          <button className="btn btn-primary md:col-span-2">Tambah Toko</button>
+
+          {/* --- Menu Items Section --- */}
+          <div className="md:col-span-2 mt-4 border-t pt-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-medium text-lg">Menu Items</h3>
+              <button type="button" onClick={addMenuItemField} className="btn btn-sm btn-outline">
+                + Tambah Menu
+              </button>
+            </div>
+            <div className="space-y-3">
+              {newMenuItems.map((item, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-2 border rounded-lg">
+                  <input
+                    type="text"
+                    placeholder="Nama Menu"
+                    value={item.name}
+                    onChange={(e) => handleNewMenuItemChange(e, index, 'name')}
+                    className="border rounded-xl px-3 py-2 dark:bg-slate-700"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Harga"
+                    value={item.price}
+                    onChange={(e) => handleNewMenuItemChange(e, index, 'price')}
+                    className="border rounded-xl px-3 py-2 dark:bg-slate-700"
+                  />
+                  <div className="md:col-span-2 grid grid-cols-2 gap-2 items-center">
+                     <input
+                        type="file"
+                        accept="image/png, image/jpeg, image/jpg"
+                        onChange={(e) => handleNewMenuImageFile(e, index)}
+                        className="border rounded-xl px-3 py-2 w-full text-sm dark:bg-slate-700"
+                      />
+                      <div className="flex items-center gap-2">
+                        {item.image && (
+                          <img
+                            src={item.image}
+                            alt="Preview"
+                            className="w-16 h-16 object-cover rounded-lg shadow-md"
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeMenuItemField(index)}
+                          className="btn btn-sm btn-danger"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* --- End of Menu Items Section --- */}
+
+          <button className="btn btn-primary md:col-span-2 mt-4">
+            {editId ? "Simpan Perubahan" : "Tambah Toko"}
+          </button>
         </form>
       )}
 
