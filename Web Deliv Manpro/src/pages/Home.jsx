@@ -4,13 +4,11 @@ import { getJSON } from "../utils/storage"
 import MerchantCard from "../components/MerchantCard.jsx"
 import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
 import RecommendationForm from "../components/RecommendationForm.jsx"
+import { CATEGORIES } from "../data/constants.js"
 
 export default function Home() {
   const { merchants, isLoading } = useData()
-  const categories = useMemo(
-    () => Array.from(new Set(merchants.map((m) => m.category))),
-    [merchants]
-  )
+  const categories = CATEGORIES
   const [activeCat, setActiveCat] = useState("Semua")
 
   const topByCategory = (cat, limit = 10) => {
