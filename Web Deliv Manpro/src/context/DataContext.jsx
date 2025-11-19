@@ -80,10 +80,11 @@ export function DataProvider({ children }) {
         
         console.log(`📄 Fetching page ${page + 1} (range: ${from} to ${to})...`)
         
+        // Fetch tanpa limit untuk memastikan semua data terambil
         const { data, error, count } = await supabase
           .from("merchants")
           .select("id, name, category, logo, phone, whatsapp", { count: "exact" })
-          .order("created_at", { ascending: true })
+          .order("id", { ascending: true }) // Gunakan id untuk konsistensi
           .range(from, to)
         
         if (error) {
@@ -191,6 +192,8 @@ export function DataProvider({ children }) {
 
     try {
       console.log(`🔍 Fetching full detail for merchant ${merchantId}...`)
+      
+      // Fetch merchant dengan menu_items dan menu_images
       const { data, error } = await supabase
         .from("merchants")
         .select(
@@ -200,7 +203,7 @@ export function DataProvider({ children }) {
         .single()
 
       if (error) {
-        console.error("Supabase error:", error)
+        console.error("❌ Supabase error:", error)
         throw error
       }
       if (!data) {
@@ -208,19 +211,33 @@ export function DataProvider({ children }) {
         return null
       }
 
+      console.log(`📦 Raw data from Supabase:`, {
+        merchant_id: data.id,
+        menu_items_count: data.menu_items?.length || 0,
+        menu_images_count: data.menu_images?.length || 0,
+        menu_images: data.menu_images
+      })
+
       const fullMerchant = mapMerchantRows([data])[0]
-      console.log(`✅ Fetched detail: ${fullMerchant.menu?.length || 0} menu items, ${fullMerchant.menu_images?.length || 0} images`)
+      console.log(`✅ Mapped merchant: ${fullMerchant.menu?.length || 0} menu items, ${fullMerchant.menu_images?.length || 0} images`)
+      
+      if (fullMerchant.menu_images && fullMerchant.menu_images.length > 0) {
+        console.log(`🖼️ Menu images URLs:`, fullMerchant.menu_images.map(img => img.image_url))
+      } else {
+        console.warn(`⚠️ No menu_images in mapped merchant!`)
+      }
       
       // Update merchant di state dan cache
       setMerchants((prev) => {
         const updated = prev.map((m) => (m.id === merchantId ? fullMerchant : m))
         setJSON("merchants", updated)
+        console.log(`💾 Updated merchant ${merchantId} in state and cache`)
         return updated
       })
       
       return fullMerchant
     } catch (err) {
-      console.error("Error fetching merchant detail:", err)
+      console.error("❌ Error fetching merchant detail:", err)
       const fallback = merchants.find((m) => m.id === merchantId) || null
       if (fallback) {
         console.log("Using cached merchant data as fallback")
@@ -231,31 +248,10 @@ export function DataProvider({ children }) {
 
   // Load dari cache dulu untuk instant display, lalu sync di background
   useEffect(() => {
-    // Instant load dari cache (hanya jika ada dan tidak kosong)
-    const cachedMerchants = getJSON("merchants", null)
-    const cachedReco = getJSON("reco", [])
-    
-    if (cachedMerchants && Array.isArray(cachedMerchants) && cachedMerchants.length > 0) {
-      console.log(`📦 Loading ${cachedMerchants.length} merchants from cache`)
-      setMerchants(cachedMerchants)
-      setRecommendations(cachedReco.map((item) => sanitizeRecommendationRecord(item)))
-      setIsLoading(false)
-      setIsOnline(usingSupabase)
-      
-      // Sync di background untuk update data terbaru (tanpa loading indicator)
-      // Tapi hanya jika cache terlihat tidak lengkap (< 50 merchants)
-      if (cachedMerchants.length < 50) {
-        console.log(`⚠️ Cache seems incomplete (${cachedMerchants.length} merchants), fetching fresh data...`)
-        fetchFromSupabase(false)
-      } else {
-        // Sync di background untuk update data terbaru
-        fetchFromSupabase(false)
-      }
-    } else {
-      // Jika cache kosong atau tidak valid, langsung fetch
-      console.log("📦 No valid cache found, fetching from Supabase...")
-      fetchFromSupabase(true)
-    }
+    // FORCE FETCH - Jangan gunakan cache yang mungkin tidak lengkap
+    // Langsung fetch fresh data dari Supabase
+    console.log("🔄 Force fetching fresh data from Supabase...")
+    fetchFromSupabase(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

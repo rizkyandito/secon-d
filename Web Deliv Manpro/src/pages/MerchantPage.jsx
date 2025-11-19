@@ -12,7 +12,7 @@ export default function MerchantPage() {
 
   const merchant = merchants.find((m) => m.id.toString() === id)
 
-  // Fetch detail on-demand jika menu atau menu_images kosong
+  // SELALU fetch detail untuk memastikan menu_images ter-load
   useEffect(() => {
     if (!merchant) {
       console.log(`⏳ Merchant ${id} not found yet, waiting...`)
@@ -29,25 +29,27 @@ export default function MerchantPage() {
     
     console.log(`🔍 Checking merchant ${id}: menu=${hasMenu}, images=${hasMenuImages}`)
     
-    // Fetch detail jika menu atau menu_images belum ada
-    if (!hasMenu || !hasMenuImages) {
-      console.log(`🔄 Fetching detail for merchant ${id} (menu: ${hasMenu}, images: ${hasMenuImages})`)
-      setLoadingDetail(true)
-      fetchMerchantDetail(Number(id))
-        .then((detail) => {
-          if (detail) {
-            console.log(`✅ Merchant detail loaded: ${detail.menu?.length || 0} menu items, ${detail.menu_images?.length || 0} images`)
+    // SELALU fetch detail untuk memastikan data lengkap (terutama menu_images)
+    // Karena data awal hanya fetch ringan tanpa menu_images
+    console.log(`🔄 Always fetching detail for merchant ${id} to ensure menu_images are loaded`)
+    setLoadingDetail(true)
+    fetchMerchantDetail(Number(id))
+      .then((detail) => {
+        if (detail) {
+          console.log(`✅ Merchant detail loaded: ${detail.menu?.length || 0} menu items, ${detail.menu_images?.length || 0} images`)
+          if (detail.menu_images && detail.menu_images.length > 0) {
+            console.log(`🖼️ Menu images found:`, detail.menu_images.map(img => img.image_url))
           } else {
-            console.warn(`⚠️ No detail returned for merchant ${id}`)
+            console.warn(`⚠️ No menu images found for merchant ${id}`)
           }
-        })
-        .catch((err) => {
-          console.error("❌ Error fetching merchant detail:", err)
-        })
-        .finally(() => setLoadingDetail(false))
-    } else {
-      console.log(`✅ Merchant ${id} already has complete data`)
-    }
+        } else {
+          console.warn(`⚠️ No detail returned for merchant ${id}`)
+        }
+      })
+      .catch((err) => {
+        console.error("❌ Error fetching merchant detail:", err)
+      })
+      .finally(() => setLoadingDetail(false))
   }, [merchant, id, fetchMerchantDetail])
 
   if (isLoading) {
