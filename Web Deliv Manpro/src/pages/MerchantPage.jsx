@@ -12,7 +12,7 @@ export default function MerchantPage() {
 
   const merchant = merchants.find((m) => m.id.toString() === id)
 
-  // SELALU fetch detail untuk memastikan menu_images ter-load
+  // Fetch detail hanya jika menu/menu_images belum lengkap
   useEffect(() => {
     if (!merchant) {
       console.log(`⏳ Merchant ${id} not found yet, waiting...`)
@@ -24,26 +24,29 @@ export default function MerchantPage() {
       return
     }
 
-    const hasMenu = merchant.menu && merchant.menu.length > 0
-    const hasMenuImages = merchant.menu_images && merchant.menu_images.length > 0
-    
-    console.log(`🔍 Checking merchant ${id}: menu=${hasMenu}, images=${hasMenuImages}`)
-    
-    // SELALU fetch detail untuk memastikan data lengkap (terutama menu_images)
-    // Karena data awal hanya fetch ringan tanpa menu_images
-    console.log(`🔄 Always fetching detail for merchant ${id} to ensure menu_images are loaded`)
+    const hasMenu = !!(merchant.menu && merchant.menu.length)
+    const hasMenuImages = !!(merchant.menu_images && merchant.menu_images.length)
+
+    console.log(`🔍 Checking merchant ${merchant.id}: menu=${hasMenu}, images=${hasMenuImages}`)
+
+    if (hasMenu && hasMenuImages) {
+      console.log(`✅ Merchant ${merchant.id} already has complete data`)
+      return
+    }
+
+    console.log(`🔄 Fetching detail for merchant ${merchant.id} (menu: ${hasMenu}, images: ${hasMenuImages})`)
     setLoadingDetail(true)
     fetchMerchantDetail(merchant.id)
       .then((detail) => {
         if (detail) {
           console.log(`✅ Merchant detail loaded: ${detail.menu?.length || 0} menu items, ${detail.menu_images?.length || 0} images`)
           if (detail.menu_images && detail.menu_images.length > 0) {
-            console.log(`🖼️ Menu images found:`, detail.menu_images.map(img => img.image_url))
+            console.log(`🖼️ Menu images found:`, detail.menu_images.map((img) => img.image_url))
           } else {
-            console.warn(`⚠️ No menu images found for merchant ${id}`)
+            console.warn(`⚠️ No menu images found for merchant ${merchant.id}`)
           }
         } else {
-          console.warn(`⚠️ No detail returned for merchant ${id}`)
+          console.warn(`⚠️ No detail returned for merchant ${merchant.id}`)
         }
       })
       .catch((err) => {
