@@ -36,6 +36,7 @@ export function DataProvider({ children }) {
   const [isOnline, setIsOnline] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
   const [pagination, setPagination] = useState({ page: 0, hasMore: true })
+  const [filters, setFilters] = useState({ q: "", cat: "Semua" })
   const refreshTimer = useRef(null)
 
   const usingSupabase = useMemo(
@@ -55,7 +56,7 @@ export function DataProvider({ children }) {
     setPagination({ page: 0, hasMore: false }) // No more loading from local
   }, [])
 
-  const fetchMerchants = useCallback(async (page = 0, pageSize = 20) => {
+  const fetchMerchants = useCallback(async (page = 0, pageSize = 20, currentFilters) => {
     if (!usingSupabase) {
       if (page === 0) hydrateFromLocal()
       return
@@ -68,11 +69,20 @@ export function DataProvider({ children }) {
       const from = page * pageSize
       const to = from + pageSize - 1
 
-      const { data, error: fetchError, count } = await supabase
+      let query = supabase
         .from("merchants")
         .select("id, name, category, logo, phone, whatsapp", { count: "exact" })
         .order("created_at", { ascending: true })
         .range(from, to)
+
+      if (currentFilters.cat !== "Semua") {
+        query = query.eq("category", currentFilters.cat)
+      }
+      if (currentFilters.q) {
+        query = query.ilike("name", `%${currentFilters.q}%`)
+      }
+
+      const { data, error: fetchError, count } = await query
 
       if (fetchError) throw fetchError
 
@@ -86,9 +96,6 @@ export function DataProvider({ children }) {
       setIsOnline(true)
       setLastSyncedAt(Date.now())
       
-      if (page === 0) {
-        setJSON("merchants", mappedMerchants)
-      }
     } catch (err) {
       setError(err.message || "Gagal mengambil data dari Supabase")
       hydrateFromLocal()
@@ -99,8 +106,8 @@ export function DataProvider({ children }) {
 
   const loadMoreMerchants = useCallback(() => {
     if (isLoading || !pagination.hasMore) return
-    fetchMerchants(pagination.page)
-  }, [isLoading, pagination, fetchMerchants])
+    fetchMerchants(pagination.page, 20, filters)
+  }, [isLoading, pagination, fetchMerchants, filters])
 
   // Fetch merchant detail dengan menu_items dan menu_images (on-demand)
   const fetchMerchantDetail = async (merchantId) => {
@@ -166,14 +173,16 @@ export function DataProvider({ children }) {
   }
 
   useEffect(() => {
-    fetchMerchants(0)
-  }, [fetchMerchants])
-
-  const refresh = useCallback(() => {
+    // When filters change, reset and fetch new data
     setMerchants([])
     setPagination({ page: 0, hasMore: true })
-    fetchMerchants(0)
-  }, [fetchMerchants])
+    fetchMerchants(0, 20, filters)
+  }, [filters, fetchMerchants])
+
+  const refresh = useCallback(() => {
+    setFilters({ q: "", cat: "Semua" })
+    // The useEffect for filters will handle the rest
+  }, [])
 
   const fetchRecommendations = useCallback(async () => {
       if (!usingSupabase) return
@@ -797,6 +806,8 @@ export function DataProvider({ children }) {
     refresh,
     loadMoreMerchants,
     pagination,
+    filters,
+    setFilters,
     fetchMerchantDetail,
     usingSupabase,
   }
