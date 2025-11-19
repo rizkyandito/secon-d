@@ -9,6 +9,17 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "script-src 'self' 'unsafe-eval' https://secon-d.vercel.app; object-src 'none'; base-uri 'self';"
+        }
+      ]
+    }
   ]
 }
 
