@@ -2,16 +2,15 @@ import { useMemo, useState, useEffect } from "react"
 import { useData } from "../context/DataContext.jsx"
 import MerchantCard from "../components/MerchantCard.jsx"
 import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
+import { CATEGORIES } from "../data/constants.js"
 
 export default function Directory() {
   const { merchants, isLoading, loadMoreMerchants, pagination } = useData()
   const [q, setQ] = useState("")
   const [cat, setCat] = useState("Semua")
 
-  const categories = useMemo(
-    () => ["Semua", ...Array.from(new Set(merchants.map((m) => m.category)))],
-    [merchants]
-  )
+  const categories = ["Semua", ...CATEGORIES]
+
 
   const filtered = useMemo(() => {
     if (q === "" && cat === "Semua") {
