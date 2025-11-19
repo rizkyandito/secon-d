@@ -4,8 +4,6 @@ import { Navigate } from "react-router-dom"
 import { useState } from "react"
 import { uploadImage } from "../utils/imageUploader.js"
 
-import { CATEGORIES } from "../data/constants.js"
-
 export default function AdminPanel() {
   const {
     user,
@@ -359,7 +357,10 @@ export default function AdminPanel() {
             onChange={(e) => setForm({ ...form, category: e.target.value })}
             className="border rounded-xl px-3 py-2 dark:bg-slate-800"
           >
-            {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+            <option value="Makanan">Makanan</option>
+            <option value="Minuman">Minuman</option>
+            <option value="Laundry">Laundry</option>
+            <option value="Kebutuhan">Kebutuhan Harian</option>
           </select>
           <input
             value={form.phone}
@@ -469,7 +470,10 @@ export default function AdminPanel() {
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
                       className="border rounded-xl px-3 py-2 dark:bg-slate-800"
                     >
-                      {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      <option value="Makanan">Makanan</option>
+                      <option value="Minuman">Minuman</option>
+                      <option value="Laundry">Laundry</option>
+                      <option value="Kebutuhan">Kebutuhan Harian</option>
                     </select>
                     <input
                       value={form.phone}

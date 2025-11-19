@@ -4,19 +4,20 @@ import { getJSON } from "../utils/storage"
 import MerchantCard from "../components/MerchantCard.jsx"
 import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
 import RecommendationForm from "../components/RecommendationForm.jsx"
-import { CATEGORIES } from "../data/constants.js"
 
 export default function Home() {
-  const { homePageMerchants, isHomeLoading } = useData()
-  const categories = CATEGORIES
+  const { merchants, isLoading } = useData()
+  const categories = useMemo(
+    () => Array.from(new Set(merchants.map((m) => m.category))),
+    [merchants]
+  )
   const [activeCat, setActiveCat] = useState("Semua")
 
   const topByCategory = (cat, limit = 10) => {
-    const sourceMerchants = homePageMerchants || []
     const same =
       cat === "Semua"
-        ? sourceMerchants
-        : sourceMerchants.filter((m) => m.category === cat)
+        ? merchants
+        : merchants.filter((m) => m.category === cat)
 
     const withRatings = same.map((m) => {
       const reviews = getJSON("reviews_" + m.id, [])
@@ -78,7 +79,7 @@ export default function Home() {
           ))}
         </div>
 
-        {isHomeLoading ? (
+        {isLoading ? (
           <MerchantListSkeleton count={4} />
         ) : tops.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
