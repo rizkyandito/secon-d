@@ -174,7 +174,7 @@ export function DataProvider({ children }) {
     }
   }
 
-  // Fetch merchant detail dengan menu_items (on-demand)
+  // Fetch merchant detail dengan menu_items dan menu_images (on-demand)
   const fetchMerchantDetail = async (merchantId) => {
     if (!usingSupabase) {
       const merchant = merchants.find((m) => m.id === merchantId)
@@ -182,6 +182,7 @@ export function DataProvider({ children }) {
     }
 
     try {
+      console.log(`🔍 Fetching full detail for merchant ${merchantId}...`)
       const { data, error } = await supabase
         .from("merchants")
         .select(
@@ -190,20 +191,33 @@ export function DataProvider({ children }) {
         .eq("id", merchantId)
         .single()
 
-      if (error) throw error
-      if (!data) return null
+      if (error) {
+        console.error("Supabase error:", error)
+        throw error
+      }
+      if (!data) {
+        console.warn(`⚠️ No data found for merchant ${merchantId}`)
+        return null
+      }
 
       const fullMerchant = mapMerchantRows([data])[0]
+      console.log(`✅ Fetched detail: ${fullMerchant.menu?.length || 0} menu items, ${fullMerchant.menu_images?.length || 0} images`)
       
-      // Update merchant di state
-      setMerchants((prev) =>
-        prev.map((m) => (m.id === merchantId ? fullMerchant : m))
-      )
+      // Update merchant di state dan cache
+      setMerchants((prev) => {
+        const updated = prev.map((m) => (m.id === merchantId ? fullMerchant : m))
+        setJSON("merchants", updated)
+        return updated
+      })
       
       return fullMerchant
     } catch (err) {
       console.error("Error fetching merchant detail:", err)
-      return merchants.find((m) => m.id === merchantId) || null
+      const fallback = merchants.find((m) => m.id === merchantId) || null
+      if (fallback) {
+        console.log("Using cached merchant data as fallback")
+      }
+      return fallback
     }
   }
 
