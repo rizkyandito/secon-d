@@ -7,7 +7,7 @@ import RecommendationForm from "../components/RecommendationForm.jsx"
 import { CATEGORIES } from "../data/constants.js"
 
 export default function Home() {
-  const { homePageMerchants, isLoading } = useData()
+  const { homePageMerchants, isHomeLoading } = useData()
   const categories = CATEGORIES
   const [activeCat, setActiveCat] = useState("Semua")
 
@@ -78,7 +78,7 @@ export default function Home() {
           ))}
         </div>
 
-        {isLoading ? (
+        {isHomeLoading ? (
           <MerchantListSkeleton count={4} />
         ) : tops.length ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

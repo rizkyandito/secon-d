@@ -33,6 +33,7 @@ export function DataProvider({ children }) {
   const [homePageMerchants, setHomePageMerchants] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isHomeLoading, setIsHomeLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isOnline, setIsOnline] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
@@ -209,6 +210,7 @@ export function DataProvider({ children }) {
   const fetchHomePageMerchants = useCallback(async () => {
     if (!usingSupabase) return
     try {
+      setIsHomeLoading(true)
       const { data, error } = await supabase
         .from("merchants")
         .select("id, name, category, logo, phone, whatsapp")
@@ -218,6 +220,8 @@ export function DataProvider({ children }) {
       setHomePageMerchants(mapMerchantRows(data, false))
     } catch (err) {
       console.error("Failed to fetch home page merchants:", err)
+    } finally {
+      setIsHomeLoading(false)
     }
   }, [usingSupabase])
 
@@ -821,6 +825,7 @@ export function DataProvider({ children }) {
     toggleRecommendationDone,
     removeRecommendation,
     isLoading,
+    isHomeLoading,
     isOnline,
     error,
     lastSyncedAt,
