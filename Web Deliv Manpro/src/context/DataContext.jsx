@@ -65,7 +65,7 @@ export function DataProvider({ children }) {
       // Step 1: Fetch the first page quickly
       const { data: firstPageData, error: firstPageError } = await supabase
         .from("merchants")
-        .select("id, name, category, phone, whatsapp") // Temporarily remove 'logo'
+        .select("id, name, category, logo, phone, whatsapp")
         .order("created_at", { ascending: true })
         .range(0, 19)
       
@@ -86,7 +86,7 @@ export function DataProvider({ children }) {
         const to = from + pageSize - 1
         const { data, error: fetchError } = await supabase
           .from("merchants")
-          .select("id, name, category, phone, whatsapp") // Temporarily remove 'logo'
+          .select("id, name, category, logo, phone, whatsapp")
           .order("created_at", { ascending: true })
           .range(from, to)
         

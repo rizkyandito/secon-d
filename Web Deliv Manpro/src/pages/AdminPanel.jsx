@@ -133,7 +133,10 @@ export default function AdminPanel() {
       )
 
       const merchantData = {
-        ...form,
+        name: form.name,
+        category: form.category,
+        phone: form.phone,
+        whatsapp: form.whatsapp,
         logo: logoUrl,
         menu: menuWithImageUrls,
         menu_images: menuWithImageUrls.filter(m => m.image).map(m => ({ image_url: m.image }))
