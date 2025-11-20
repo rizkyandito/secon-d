@@ -19,6 +19,7 @@ export default function AdminPanel() {
     removeMenuItem,
     addMenuImage,
     removeMenuImage,
+    removeLogo,
     recommendations,
     toggleRecommendationDone,
     removeRecommendation,
@@ -171,6 +172,18 @@ export default function AdminPanel() {
   const cancelEdit = () => {
     setEditId(null)
     resetForm()
+  }
+
+  const handleRemoveLogo = async (merchantId) => {
+    if (!confirm("Yakin ingin menghapus logo toko ini?")) return
+    try {
+      await removeLogo(merchantId)
+      showNotification("✅ Logo berhasil dihapus!", "success")
+      // Also update the form state to reflect the change immediately
+      setForm(prev => ({ ...prev, logo: null }))
+    } catch (err) {
+      showNotification(`❌ ${err.message || "Gagal menghapus logo"}`, "error")
+    }
   }
 
   const handleRemoveMerchant = async (merchant) => {
@@ -497,13 +510,24 @@ export default function AdminPanel() {
                         onChange={handleFile}
                         className="border rounded-xl px-3 py-2 w-full dark:bg-slate-800"
                       />
-                      {form.logo && (
-                        <img
-                          src={form.logo}
-                          alt="Preview"
-                          className="mt-2 w-28 h-28 object-cover rounded-xl shadow-md"
-                        />
-                      )}
+                      <div className="flex items-center gap-4 mt-2">
+                        {form.logo && (
+                          <img
+                            src={form.logo}
+                            alt="Preview"
+                            className="w-28 h-28 object-cover rounded-xl shadow-md"
+                          />
+                        )}
+                        {form.logo && (
+                          <button 
+                            type="button" 
+                            onClick={() => handleRemoveLogo(m.id)} 
+                            className="btn btn-danger"
+                          >
+                            Hapus Logo
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex gap-2 md:col-span-2">
                       <button className="btn btn-primary flex-1">Simpan</button>

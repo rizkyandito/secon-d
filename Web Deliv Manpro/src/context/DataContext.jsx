@@ -381,6 +381,21 @@ export function DataProvider({ children }) {
   const removeMenuImage = async (merchantId, imageId) => {
     if (usingSupabase) {
       try {
+        // Find the image to get its URL for storage deletion
+        const merchant = merchants.find(m => m.id === merchantId);
+        const image = merchant?.menu_images.find(img => img.id === imageId);
+        
+        if (image && image.image_url) {
+          const url = new URL(image.image_url);
+          const filePath = url.pathname.split('/').pop();
+          
+          // 1. Delete from Storage
+          if (filePath) {
+            await supabase.storage.from('menu-images').remove([filePath]);
+          }
+        }
+
+        // 2. Delete from database
         const { error: deleteError } = await supabase
           .from("menu_images")
           .delete()
@@ -405,6 +420,30 @@ export function DataProvider({ children }) {
           : merchant
       )
     )
+  }
+
+  const removeLogo = async (merchantId) => {
+    if (usingSupabase) {
+      try {
+        const merchant = merchants.find(m => m.id === merchantId);
+        if (merchant && merchant.logo) {
+          const url = new URL(merchant.logo);
+          const filePath = url.pathname.split('/').pop();
+
+          // 1. Delete from Storage
+          if (filePath) {
+            await supabase.storage.from('menu-images').remove([filePath]);
+          }
+        }
+
+        // 2. Update database
+        await updateMerchant(merchantId, { logo: null });
+
+      } catch (err) {
+        setError(err.message);
+        throw err;
+      }
+    }
   }
 
   const addRecommendation = async (payload) => {
@@ -499,6 +538,7 @@ export function DataProvider({ children }) {
     removeMenuItem,
     addMenuImage,
     removeMenuImage,
+    removeLogo,
     addRecommendation,
     toggleRecommendationDone,
     removeRecommendation,
