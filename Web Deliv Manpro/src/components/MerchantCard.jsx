@@ -7,8 +7,15 @@ const getOptimizedUrl = (url) => {
   if (!url || !url.includes("supabase.co")) {
     return url;
   }
-  // Request a smaller, web-friendly version of the image
-  return `${url}?width=128&height=128&quality=75&format=webp`;
+
+  // Check if it's a storage object URL and transform it into a render URL
+  if (url.includes("/storage/v1/object/public/")) {
+    const transformedUrl = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    // Now add transformation parameters
+    return `${transformedUrl}?width=128&height=128&quality=75&format=webp`;
+  }
+
+  return url; // Return original URL if it's not the expected format
 };
 
 export default function MerchantCard({ merchant }) {
