@@ -146,6 +146,39 @@ export function DataProvider({ children }) {
     fetchRecommendations()
   }, [fetchRecommendations])
 
+  const fetchMerchantDetail = useCallback(async (merchantId) => {
+    if (!usingSupabase) {
+      const merchant = merchants.find((m) => m.id === merchantId)
+      return merchant || null
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("merchants")
+        .select(
+          "id, name, category, logo, phone, whatsapp, menu_items(id, name, price, merchant_id), menu_images(id, image_url, merchant_id)"
+        )
+        .eq("id", merchantId)
+        .single()
+
+      if (error) throw error
+      if (!data) return null
+
+      const fullMerchant = mapMerchantRows([data], true)[0]
+      
+      setMerchants((prev) => {
+        const updated = prev.map((m) => (m.id === merchantId ? fullMerchant : m))
+        setJSON("merchants", updated)
+        return updated
+      })
+      
+      return fullMerchant
+    } catch (err) {
+      console.error("Error fetching merchant detail:", err)
+      return merchants.find((m) => m.id === merchantId) || null
+    }
+  }, [usingSupabase, merchants])
+
   // ... (rest of the functions: addMerchant, updateMerchant, etc.)
 
   const contextValue = {
@@ -156,7 +189,19 @@ export function DataProvider({ children }) {
     error,
     lastSyncedAt,
     refresh: fetchAllMerchantsHybrid,
-    // ... other functions
+    fetchMerchantDetail,
+    addMerchant,
+    updateMerchant,
+    removeMerchant,
+    addMenuItem,
+    updateMenuItem,
+    removeMenuItem,
+    addMenuImage,
+    removeMenuImage,
+    addRecommendation,
+    toggleRecommendationDone,
+    removeRecommendation,
+    usingSupabase,
   }
   
   // ... (rest of the component)
