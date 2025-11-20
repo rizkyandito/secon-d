@@ -2,11 +2,22 @@ import { motion } from "framer-motion"
 import { Link } from "react-router-dom"
 import { getJSON } from "../utils/storage"
 
+// Helper function to get optimized image URL from Supabase
+const getOptimizedUrl = (url) => {
+  if (!url || !url.includes("supabase.co")) {
+    return url;
+  }
+  // Request a smaller, web-friendly version of the image
+  return `${url}?width=128&height=128&quality=75&format=webp`;
+};
+
 export default function MerchantCard({ merchant }) {
   const reviews = getJSON("reviews_" + merchant.id, [])
   const avg = reviews.length
     ? (reviews.reduce((a, b) => a + b.rating, 0) / reviews.length).toFixed(1)
     : null
+
+  const optimizedLogo = getOptimizedUrl(merchant.logo);
 
   return (
     <Link to={`/merchant/${merchant.id}`}>
@@ -16,10 +27,11 @@ export default function MerchantCard({ merchant }) {
         className="card p-4 h-full"
       >
         <div className="flex items-center gap-3">
-          {merchant.logo ? (
+          {optimizedLogo ? (
             <img
-              src={merchant.logo}
+              src={optimizedLogo}
               alt={merchant.name}
+              loading="lazy"
               className="w-14 h-14 object-cover rounded-2xl shadow"
             />
           ) : (
