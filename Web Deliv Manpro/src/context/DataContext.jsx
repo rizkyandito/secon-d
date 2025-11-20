@@ -62,6 +62,7 @@ export function DataProvider({ children }) {
       setIsLoading(true)
       setError(null)
       
+      // Step 1: Fetch the first page quickly
       const { data: firstPageData, error: firstPageError } = await supabase
         .from("merchants")
         .select("id, name, category, phone, whatsapp") // Temporarily remove 'logo'
@@ -174,37 +175,326 @@ export function DataProvider({ children }) {
   }, [usingSupabase, merchants])
 
   const addMerchant = async (payload) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { data, error: insertError } = await supabase
+          .from("merchants")
+          .insert([
+            {
+              name: payload.name,
+              category: payload.category,
+              logo: payload.logo,
+              phone: payload.phone,
+              whatsapp: payload.whatsapp,
+            },
+          ])
+          .select("id, name, category, logo, phone, whatsapp")
+          .single()
+
+        if (insertError) throw insertError
+
+        setMerchants((prev) => [...prev, { ...data, menu: [] }])
+        setLastSyncedAt(Date.now())
+        return data
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    const newMerchant = {
+      ...payload,
+      id: Date.now(),
+      menu: payload.menu || [],
+    }
+    setMerchants((prev) => [...prev, newMerchant])
+    return newMerchant
   }
+
   const updateMerchant = async (id, updates) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { error: updateError } = await supabase
+          .from("merchants")
+          .update(updates)
+          .eq("id", id)
+
+        if (updateError) throw updateError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === id ? { ...merchant, ...updates } : merchant
+      )
+    )
   }
+
   const removeMerchant = async (id) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { error: deleteError } = await supabase
+          .from("merchants")
+          .delete()
+          .eq("id", id)
+
+        if (deleteError) throw deleteError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setMerchants((prev) => prev.filter((merchant) => merchant.id !== id))
   }
+
   const addMenuItem = async (merchantId, item) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { data, error: insertError } = await supabase
+          .from("menu_items")
+          .insert([
+            {
+              merchant_id: merchantId,
+              name: item.name,
+              price: item.price,
+            },
+          ])
+          .select("id, name, price, merchant_id")
+          .single()
+
+        if (insertError) throw insertError
+
+        setMerchants((prev) =>
+          prev.map((merchant) =>
+            merchant.id === merchantId
+              ? { ...merchant, menu: [...(merchant.menu || []), { ...data }] }
+              : merchant
+          )
+        )
+        return data
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    const newItem = { id: Date.now(), ...item }
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? { ...merchant, menu: [...(merchant.menu || []), newItem] }
+          : merchant
+      )
+    )
+    return newItem
   }
+
   const updateMenuItem = async (merchantId, itemId, updates) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { error: updateError } = await supabase
+          .from("menu_items")
+          .update(updates)
+          .eq("id", itemId)
+
+        if (updateError) throw updateError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? {
+              ...merchant,
+              menu: merchant.menu.map((menuItem) =>
+                menuItem.id === itemId ? { ...menuItem, ...updates } : menuItem
+              ),
+            }
+          : merchant
+      )
+    )
   }
+
   const removeMenuItem = async (merchantId, itemId) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { error: deleteError } = await supabase
+          .from("menu_items")
+          .delete()
+          .eq("id", itemId)
+
+        if (deleteError) throw deleteError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? {
+              ...merchant,
+              menu: merchant.menu.filter((menuItem) => menuItem.id !== itemId),
+            }
+          : merchant
+      )
+    )
   }
+
   const addMenuImage = async (merchantId, imageUrl) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { data, error: insertError } = await supabase
+          .from("menu_images")
+          .insert([
+            {
+              merchant_id: merchantId,
+              image_url: imageUrl,
+            },
+          ])
+          .select("id, image_url, merchant_id")
+          .single()
+
+        if (insertError) throw insertError
+
+        setMerchants((prev) =>
+          prev.map((merchant) =>
+            merchant.id === merchantId
+              ? {
+                  ...merchant,
+                  menu_images: [...(merchant.menu_images || []), { ...data }],
+                }
+              : merchant
+          )
+        )
+        return data
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    const newImage = { id: Date.now(), image_url: imageUrl, merchant_id: merchantId }
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? { ...merchant, menu_images: [...(merchant.menu_images || []), newImage] }
+          : merchant
+      )
+    )
+    return newImage
   }
+
   const removeMenuImage = async (merchantId, imageId) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { error: deleteError } = await supabase
+          .from("menu_images")
+          .delete()
+          .eq("id", imageId)
+
+        if (deleteError) throw deleteError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setMerchants((prev) =>
+      prev.map((merchant) =>
+        merchant.id === merchantId
+          ? {
+              ...merchant,
+              menu_images: merchant.menu_images.filter(
+                (image) => image.id !== imageId
+              ),
+            }
+          : merchant
+      )
+    )
   }
+
   const addRecommendation = async (payload) => {
-    // Function implementation
+    const sanitizedPayload = sanitizeRecommendationRecord(payload)
+    if (!sanitizedPayload.message) {
+      throw new Error("Pesan rekomendasi tidak boleh kosong atau hanya simbol")
+    }
+
+    if (usingSupabase) {
+      try {
+        const { data, error: insertError } = await supabase
+          .from("recommendations")
+          .insert([{ ...sanitizedPayload, done: false }])
+          .select("id, name, contact, message, done, created_at")
+          .single()
+
+        if (insertError) throw insertError
+
+        const record = sanitizeRecommendationRecord(data)
+        setRecommendations((prev) => [...prev, record])
+        return record
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    const recommendation = {
+      id: Date.now(),
+      ...sanitizedPayload,
+      done: false,
+    }
+    setRecommendations((prev) => [...prev, recommendation])
+    return recommendation
   }
+
   const toggleRecommendationDone = async (id) => {
-    // Function implementation
+    const target = recommendations.find((r) => r.id === id)
+    const nextDone = !target?.done
+
+    if (usingSupabase) {
+      try {
+        const { error: updateError } = await supabase
+          .from("recommendations")
+          .update({ done: nextDone })
+          .eq("id", id)
+
+        if (updateError) throw updateError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setRecommendations((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, done: nextDone } : r))
+    )
   }
+
   const removeRecommendation = async (id) => {
-    // Function implementation
+    if (usingSupabase) {
+      try {
+        const { error: deleteError } = await supabase
+          .from("recommendations")
+          .delete()
+          .eq("id", id)
+
+        if (deleteError) throw deleteError
+      } catch (err) {
+        setError(err.message)
+        throw err
+      }
+    }
+
+    setRecommendations((prev) => prev.filter((r) => r.id !== id))
   }
 
   const contextValue = {
