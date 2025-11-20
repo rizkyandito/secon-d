@@ -29,7 +29,7 @@ const mapMerchantRows = (rows = [], detailFetched = false) =>
   }))
 
 export function DataProvider({ children }) {
-  const [merchants, setMerchants] = useState(initialMerchants)
+  const [merchants, setMerchants] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -43,7 +43,7 @@ export function DataProvider({ children }) {
   )
 
   const hydrateFromLocal = useCallback(() => {
-    const localMerchants = getJSON("merchants", initialMerchants)
+    const localMerchants = getJSON("merchants", [])
     const localRecommendations = getJSON("reco", [])
       .map((item) => sanitizeRecommendationRecord(item))
     setMerchants(localMerchants)
