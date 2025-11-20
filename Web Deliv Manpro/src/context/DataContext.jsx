@@ -31,6 +31,7 @@ export function DataProvider({ children }) {
   const [merchants, setMerchants] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isOnline, setIsOnline] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
@@ -73,12 +74,14 @@ export function DataProvider({ children }) {
 
       const initialMappedMerchants = mapMerchantRows(firstPageData, false)
       setMerchants(initialMappedMerchants)
-      setIsLoading(false)
+      setIsLoading(false) // Set loading to false so UI is interactive
+      setIsBackgroundLoading(true) // Start background loading indicator
       setIsOnline(true)
 
+      // Step 2: Fetch the rest in the background
       let allData = [...firstPageData]
       let page = 1
-      const pageSize = 1000
+      const pageSize = 1000 // Fetch larger chunks in the background
       let hasMore = true
 
       while(hasMore) {
@@ -106,15 +109,18 @@ export function DataProvider({ children }) {
         }
       }
       
+      // Step 3: Once all data is fetched, update the state with the full list
       const finalMappedMerchants = mapMerchantRows(allData, false)
       setMerchants(finalMappedMerchants)
-      setJSON("merchants", finalMappedMerchants)
+      setJSON("merchants", finalMappedMerchants) // Cache the full list
       setLastSyncedAt(Date.now())
+      setIsBackgroundLoading(false) // End background loading indicator
       
     } catch (err) {
       setError(err.message || "Gagal mengambil data dari Supabase")
       hydrateFromLocal()
       setIsLoading(false)
+      setIsBackgroundLoading(false)
     }
   }, [usingSupabase, hydrateFromLocal])
 
@@ -501,6 +507,7 @@ export function DataProvider({ children }) {
     merchants,
     recommendations,
     isLoading,
+    isBackgroundLoading,
     isOnline,
     error,
     lastSyncedAt,

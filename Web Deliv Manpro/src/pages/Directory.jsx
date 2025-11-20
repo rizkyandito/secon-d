@@ -4,7 +4,7 @@ import MerchantCard from "../components/MerchantCard.jsx"
 import MerchantListSkeleton from "../components/MerchantListSkeleton.jsx"
 
 export default function Directory() {
-  const { merchants, isLoading } = useData()
+  const { merchants, isLoading, isBackgroundLoading } = useData()
   const [q, setQ] = useState("")
   const [cat, setCat] = useState("Semua")
 
@@ -14,6 +14,7 @@ export default function Directory() {
   )
 
   const filtered = useMemo(() => {
+    // Filtering logic is correct and can stay the same
     return merchants.filter((m) => {
       const byCat = cat === "Semua" || m.category === cat
       const byText = (
@@ -34,6 +35,7 @@ export default function Directory() {
       <h1 className="text-2xl font-bold">Daftar Toko</h1>
 
       <div className="card mt-4 grid md:grid-cols-4 gap-3">
+        {/* Input and select are correct */}
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -59,13 +61,20 @@ export default function Directory() {
       {isLoading && merchants.length === 0 ? (
         <MerchantListSkeleton count={6} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-          {filtered.map((m) => (
-            <div key={m.id}>
-              <MerchantCard merchant={m} showReviews={true} />
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            {filtered.map((m) => (
+              <div key={m.id}>
+                <MerchantCard merchant={m} showReviews={true} />
+              </div>
+            ))}
+          </div>
+          {isBackgroundLoading && (
+            <div className="text-center mt-6 text-slate-500 animate-pulse">
+              Memuat semua toko di latar belakang...
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   )
