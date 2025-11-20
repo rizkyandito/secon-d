@@ -31,7 +31,6 @@ export function DataProvider({ children }) {
   const [merchants, setMerchants] = useState([])
   const [recommendations, setRecommendations] = useState([])
   const [isLoading, setIsLoading] = useState(true)
-  const [isBackgroundLoading, setIsBackgroundLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isOnline, setIsOnline] = useState(false)
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
@@ -53,7 +52,7 @@ export function DataProvider({ children }) {
     setError(null)
   }, [])
 
-  const fetchAllMerchantsHybrid = useCallback(async () => {
+  const fetchAllMerchants = useCallback(async () => {
     if (!usingSupabase) {
       hydrateFromLocal()
       return
@@ -63,25 +62,9 @@ export function DataProvider({ children }) {
       setIsLoading(true)
       setError(null)
       
-      // Step 1: Fetch the first page quickly
-      const { data: firstPageData, error: firstPageError } = await supabase
-        .from("merchants")
-        .select("id, name, category, logo, phone, whatsapp")
-        .order("created_at", { ascending: true })
-        .range(0, 19)
-      
-      if (firstPageError) throw firstPageError
-
-      const initialMappedMerchants = mapMerchantRows(firstPageData, false)
-      setMerchants(initialMappedMerchants)
-      setIsLoading(false) // Set loading to false so UI is interactive
-      setIsBackgroundLoading(true) // Start background loading indicator
-      setIsOnline(true)
-
-      // Step 2: Fetch the rest in the background
-      let allData = [...firstPageData]
-      let page = 1
-      const pageSize = 1000 // Fetch larger chunks in the background
+      let allData = []
+      let page = 0
+      const pageSize = 1000
       let hasMore = true
 
       while(hasMore) {
@@ -93,10 +76,7 @@ export function DataProvider({ children }) {
           .order("created_at", { ascending: true })
           .range(from, to)
         
-        if (fetchError) {
-          console.error("Background fetch failed:", fetchError)
-          break
-        }
+        if (fetchError) throw fetchError
 
         if (data.length > 0) {
           allData.push(...data)
@@ -109,24 +89,23 @@ export function DataProvider({ children }) {
         }
       }
       
-      // Step 3: Once all data is fetched, update the state with the full list
       const finalMappedMerchants = mapMerchantRows(allData, false)
       setMerchants(finalMappedMerchants)
-      setJSON("merchants", finalMappedMerchants) // Cache the full list
+      setJSON("merchants", finalMappedMerchants)
       setLastSyncedAt(Date.now())
-      setIsBackgroundLoading(false) // End background loading indicator
+      setIsOnline(true)
       
     } catch (err) {
       setError(err.message || "Gagal mengambil data dari Supabase")
       hydrateFromLocal()
+    } finally {
       setIsLoading(false)
-      setIsBackgroundLoading(false)
     }
   }, [usingSupabase, hydrateFromLocal])
 
   useEffect(() => {
-    fetchAllMerchantsHybrid()
-  }, [fetchAllMerchantsHybrid])
+    fetchAllMerchants()
+  }, [fetchAllMerchants])
 
   const fetchRecommendations = useCallback(async () => {
     if (!usingSupabase) return
@@ -507,11 +486,10 @@ export function DataProvider({ children }) {
     merchants,
     recommendations,
     isLoading,
-    isBackgroundLoading,
     isOnline,
     error,
     lastSyncedAt,
-    refresh: fetchAllMerchantsHybrid,
+    refresh: fetchAllMerchants,
     fetchMerchantDetail,
     addMerchant,
     updateMerchant,
