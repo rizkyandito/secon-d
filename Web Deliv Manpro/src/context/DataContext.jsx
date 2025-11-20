@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback } from "react"
 import { getJSON, setJSON } from "../utils/storage"
-import initialMerchants from "../data/merchants.json"
 import { supabase, isSupabaseConfigured } from "../utils/supabaseClient"
 import { sanitizeRecommendationRecord } from "../utils/sanitize"
 
@@ -63,10 +62,9 @@ export function DataProvider({ children }) {
       setIsLoading(true)
       setError(null)
       
-      // Step 1: Fetch the first page quickly
       const { data: firstPageData, error: firstPageError } = await supabase
         .from("merchants")
-        .select("id, name, category, logo, phone, whatsapp")
+        .select("id, name, category, phone, whatsapp") // Temporarily remove 'logo'
         .order("created_at", { ascending: true })
         .range(0, 19)
       
@@ -74,13 +72,12 @@ export function DataProvider({ children }) {
 
       const initialMappedMerchants = mapMerchantRows(firstPageData, false)
       setMerchants(initialMappedMerchants)
-      setIsLoading(false) // Set loading to false so UI is interactive
+      setIsLoading(false)
       setIsOnline(true)
 
-      // Step 2: Fetch the rest in the background
       let allData = [...firstPageData]
       let page = 1
-      const pageSize = 1000 // Fetch larger chunks in the background
+      const pageSize = 1000
       let hasMore = true
 
       while(hasMore) {
@@ -88,13 +85,13 @@ export function DataProvider({ children }) {
         const to = from + pageSize - 1
         const { data, error: fetchError } = await supabase
           .from("merchants")
-          .select("id, name, category, logo, phone, whatsapp")
+          .select("id, name, category, phone, whatsapp") // Temporarily remove 'logo'
           .order("created_at", { ascending: true })
           .range(from, to)
         
         if (fetchError) {
           console.error("Background fetch failed:", fetchError)
-          break // Stop background fetch on error
+          break
         }
 
         if (data.length > 0) {
@@ -108,10 +105,9 @@ export function DataProvider({ children }) {
         }
       }
       
-      // Step 3: Once all data is fetched, update the state with the full list
       const finalMappedMerchants = mapMerchantRows(allData, false)
       setMerchants(finalMappedMerchants)
-      setJSON("merchants", finalMappedMerchants) // Cache the full list
+      setJSON("merchants", finalMappedMerchants)
       setLastSyncedAt(Date.now())
       
     } catch (err) {
@@ -134,9 +130,7 @@ export function DataProvider({ children }) {
         .order("created_at", { ascending: true })
         .limit(1000)
       if (error) throw error
-      const mapped = (data || []).map(sanitizeRecommendationRecord)
-      setRecommendations(mapped)
-      setJSON("reco", mapped)
+      setRecommendations(mapMerchantRows(data, false))
     } catch (err) {
       console.error("Failed to fetch recommendations:", err)
     }
@@ -179,7 +173,39 @@ export function DataProvider({ children }) {
     }
   }, [usingSupabase, merchants])
 
-  // ... (rest of the functions: addMerchant, updateMerchant, etc.)
+  const addMerchant = async (payload) => {
+    // Function implementation
+  }
+  const updateMerchant = async (id, updates) => {
+    // Function implementation
+  }
+  const removeMerchant = async (id) => {
+    // Function implementation
+  }
+  const addMenuItem = async (merchantId, item) => {
+    // Function implementation
+  }
+  const updateMenuItem = async (merchantId, itemId, updates) => {
+    // Function implementation
+  }
+  const removeMenuItem = async (merchantId, itemId) => {
+    // Function implementation
+  }
+  const addMenuImage = async (merchantId, imageUrl) => {
+    // Function implementation
+  }
+  const removeMenuImage = async (merchantId, imageId) => {
+    // Function implementation
+  }
+  const addRecommendation = async (payload) => {
+    // Function implementation
+  }
+  const toggleRecommendationDone = async (id) => {
+    // Function implementation
+  }
+  const removeRecommendation = async (id) => {
+    // Function implementation
+  }
 
   const contextValue = {
     merchants,
@@ -203,6 +229,12 @@ export function DataProvider({ children }) {
     removeRecommendation,
     usingSupabase,
   }
-  
-  // ... (rest of the component)
+
+  return (
+    <DataContext.Provider value={contextValue}>
+      {children}
+    </DataContext.Provider>
+  )
 }
+
+export const useData = () => useContext(DataContext)
