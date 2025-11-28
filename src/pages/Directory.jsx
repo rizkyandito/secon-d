@@ -43,29 +43,38 @@ export default function Directory() {
   }, [merchants, debouncedQ, cat])
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-bold">Daftar Toko</h1>
+    <div className="max-w-7xl mx-auto px-4 py-8 md:py-12">
+      <div className="text-center mb-10 animate-fade-in-up">
+        <h1 className="wp-h1 mb-4">📋 Direktori Lengkap</h1>
+        <p className="wp-p max-w-2xl mx-auto">Jelajahi semua toko yang tersedia di platform kami</p>
+      </div>
 
-      <div className="card mt-4 grid md:grid-cols-4 gap-3">
-        <input
-          value={q}
-          onChange={handleSearchChange}
-          placeholder="Cari nama toko/menu..."
-          className="border rounded-xl px-3 py-2 md:col-span-2 dark:bg-slate-800"
-        />
-        <select
-          value={cat}
-          onChange={(e) => setCat(e.target.value)}
-          className="border rounded-xl px-3 py-2 dark:bg-slate-800"
-        >
-          {categories.map((c, i) => (
-            <option key={`${c}-${i}`} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-        <div className="text-sm text-slate-500 self-center">
-          Total: {filtered.length} toko
+      <div className="card mb-8">
+        <div className="grid md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <input
+              value={q}
+              onChange={handleSearchChange}
+              placeholder="🔍 Cari nama toko atau menu..."
+              className="w-full px-5 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900/50 backdrop-blur-xl focus:ring-2 focus:ring-brand focus:border-transparent transition-all duration-300"
+            />
+          </div>
+          <select
+            value={cat}
+            onChange={(e) => setCat(e.target.value)}
+            className="px-5 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900/50 backdrop-blur-xl focus:ring-2 focus:ring-brand focus:border-transparent transition-all duration-300 font-semibold"
+          >
+            {categories.map((c, i) => (
+              <option key={`${c}-${i}`} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <div className="flex items-center justify-center px-5 py-3 bg-gradient-to-r from-brand/10 to-brand2/10 rounded-xl border border-brand/20">
+            <span className="text-sm font-bold text-brand dark:text-brand2">
+              📊 Total: {filtered.length} toko
+            </span>
+          </div>
         </div>
       </div>
 

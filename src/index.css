@@ -1,17 +1,53 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950;
+    @apply min-h-screen;
+  }
+}
+
 @layer components{
-  .btn{@apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-2 text-sm font-semibold transition duration-300;}
-  .btn-primary{@apply bg-gradient-to-r from-brand to-brand2 text-white hover:shadow-card hover:-translate-y-0.5;}
-  .btn-outline{@apply border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800;}
-  .btn-danger{@apply bg-brand3/10 text-brand3 hover:bg-brand3 hover:text-white;}
-  .btn-sm{@apply px-3 py-1 text-xs;}
-  .card{@apply rounded-3xl border border-slate-200/60 dark:border-white/10 bg-white dark:bg-slate-900/70 shadow-card p-5;}
-  .glass{@apply bg-white/60 dark:bg-slate-900/60 backdrop-blur;}
-  .wp-h1{@apply text-4xl md:text-5xl font-extrabold tracking-tight;}
-  .wp-h2{@apply text-3xl font-bold;}
-  .wp-p{@apply text-base leading-7;}
+  .btn{
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-xl;
+  }
+  .btn-primary{
+    @apply bg-gradient-to-r from-brand via-brand2 to-purple-600 text-white hover:scale-105 hover:-translate-y-1;
+  }
+  .btn-outline{
+    @apply border-2 border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-105;
+  }
+  .btn-danger{
+    @apply bg-brand3/10 text-brand3 hover:bg-brand3 hover:text-white hover:scale-105;
+  }
+  .btn-sm{@apply px-4 py-2 text-xs;}
+
+  .card{
+    @apply rounded-3xl border border-slate-200/60 dark:border-white/10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl shadow-card p-6 transition-all duration-300 hover:shadow-2xl;
+  }
+
+  .glass{
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-lg;
+  }
+
+  .wp-h1{
+    @apply text-5xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-brand via-brand2 to-purple-600 bg-clip-text text-transparent;
+  }
+  .wp-h2{
+    @apply text-3xl md:text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent;
+  }
+  .wp-p{@apply text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300;}
+
+  .hero-gradient{
+    @apply bg-gradient-to-br from-brand/10 via-brand2/10 to-purple-600/10 dark:from-brand/20 dark:via-brand2/20 dark:to-purple-600/20;
+  }
+
+  .merchant-card{
+    @apply card cursor-pointer overflow-hidden relative;
+    @apply hover:scale-[1.02] hover:border-brand/50 dark:hover:border-brand2/50;
+  }
 }
 
 @keyframes slide-in {
@@ -25,6 +61,34 @@
   }
 }
 
+@keyframes fade-in-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 .animate-slide-in {
   animation: slide-in 0.3s ease-out;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }
