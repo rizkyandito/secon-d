@@ -1,10 +1,8 @@
 import { useData } from "../context/DataContext.jsx"
 import { useAuth } from "../context/AuthContext.jsx"
 import { Navigate } from "react-router-dom"
-import { useState, useMemo } from "react"
+import { useState } from "react"
 import { uploadImage } from "../utils/imageUploader.js"
-import TabNavigation from "../components/admin/TabNavigation.jsx"
-import SearchBar from "../components/admin/SearchBar.jsx"
 
 export default function AdminPanel() {
   const {
@@ -45,12 +43,6 @@ export default function AdminPanel() {
   const [notification, setNotification] = useState(null)
   const [newMenuItems, setNewMenuItems] = useState([])
   const [newMenuImages, setNewMenuImages] = useState([])
-
-  // New states for UI improvements
-  const [activeTab, setActiveTab] = useState('merchants')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
 
   if (!user) return <Navigate to="/" replace />
 
@@ -295,27 +287,6 @@ export default function AdminPanel() {
     return "💾 Menggunakan data lokal (localStorage)"
   }
 
-  // Filter merchants berdasarkan search
-  const filteredMerchants = useMemo(() => {
-    return merchants.filter(m =>
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  }, [merchants, searchQuery])
-
-  // Pagination
-  const totalPages = Math.ceil(filteredMerchants.length / itemsPerPage)
-  const paginatedMerchants = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return filteredMerchants.slice(start, start + itemsPerPage)
-  }, [filteredMerchants, currentPage])
-
-  // Tabs configuration
-  const tabs = [
-    { id: 'merchants', label: 'Kelola Toko', icon: '🏪', count: merchants.length },
-    { id: 'recommendations', label: 'Rekomendasi', icon: '💬', count: recommendations.length },
-  ]
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
       {notification && (
@@ -342,71 +313,51 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-4xl font-black bg-gradient-to-r from-brand to-brand2 bg-clip-text text-transparent">
-            Admin Panel
-          </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2 flex flex-wrap items-center gap-2">
+          <h1 className="text-3xl font-bold">Admin Panel</h1>
+          <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
             {statusLabel()}
+            {usingSupabase && (
+              <>
+                <button
+                  onClick={refresh}
+                  className="btn btn-outline btn-sm"
+                  disabled={isLoading}
+                >
+                  🔄 Refresh
+                </button>
+                <button
+                  onClick={() => {
+                    if (confirm("Yakin ingin clear cache? Data akan di-reload dari Supabase.")) {
+                      clearCache()
+                    }
+                  }}
+                  className="btn btn-outline btn-sm text-amber-600 border-amber-300"
+                  disabled={isLoading}
+                >
+                  🗑️ Clear Cache
+                </button>
+              </>
+            )}
           </p>
         </div>
         <div className="flex gap-2">
-          {usingSupabase && (
-            <>
-              <button
-                onClick={refresh}
-                className="btn btn-outline btn-sm"
-                disabled={isLoading}
-              >
-                🔄 Refresh
-              </button>
-              <button
-                onClick={() => {
-                  if (confirm("Yakin ingin clear cache? Data akan di-reload dari Supabase.")) {
-                    clearCache()
-                  }
-                }}
-                className="btn btn-outline btn-sm text-amber-600 border-amber-300 hover:border-amber-600"
-                disabled={isLoading}
-              >
-                🗑️ Clear Cache
-              </button>
-            </>
-          )}
           <a
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-outline btn-sm"
+            className="btn btn-outline"
           >
-            👁️ Website
+            👁️ Lihat Website
           </a>
-          <button onClick={logout} className="btn btn-danger btn-sm">
-            🚪 Keluar
+          <button onClick={logout} className="btn btn-danger">
+            Keluar
           </button>
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} tabs={tabs} />
-
-      {/* Merchants Tab */}
-      {activeTab === 'merchants' && (
-        <>
-          {/* Search Bar */}
-          <div className="mb-6">
-            <SearchBar
-              placeholder="🔍 Cari toko berdasarkan nama atau kategori..."
-              onSearch={(q) => {
-                setSearchQuery(q)
-                setCurrentPage(1) // Reset ke halaman 1 saat search
-              }}
-            />
-          </div>
-
-          {editId === null && (
+      {editId === null && (
         <form
           onSubmit={submit}
           className="card mt-4 grid gap-3 md:grid-cols-2 p-4 shadow-lg"
@@ -517,9 +468,9 @@ export default function AdminPanel() {
       )}
 
       <div className="mt-8">
-        <h2 className="font-semibold text-xl mb-4">Daftar Toko ({filteredMerchants.length})</h2>
+        <h2 className="font-semibold text-xl mb-4">Daftar Toko</h2>
         <div className="grid gap-3">
-          {paginatedMerchants.map((m) => (
+          {merchants.map((m) => (
             <div key={m.id} className="card p-4 shadow-md">
               {editId === m.id ? (
                 <>
@@ -701,35 +652,8 @@ export default function AdminPanel() {
             </div>
           ))}
         </div>
-
-        {/* Pagination Controls */}
-        {Math.ceil(filteredMerchants.length / itemsPerPage) > 1 && (
-          <div className="mt-6 flex items-center justify-center gap-3">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              ← Prev
-            </button>
-            <span className="text-sm font-semibold">
-              Halaman {currentPage} dari {Math.ceil(filteredMerchants.length / itemsPerPage)}
-            </span>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(Math.ceil(filteredMerchants.length / itemsPerPage), p + 1))}
-              disabled={currentPage === Math.ceil(filteredMerchants.length / itemsPerPage)}
-              className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next →
-            </button>
-          </div>
-        )}
       </div>
-      </>
-      )}
 
-      {/* Recommendations Tab */}
-      {activeTab === 'recommendations' && (
       <div className="card mt-8 p-4 shadow-lg">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold text-xl">Rekomendasi dari Pengunjung</h2>
@@ -779,7 +703,6 @@ export default function AdminPanel() {
           </ul>
         )}
       </div>
-      )}
     </div>
   )
 }
