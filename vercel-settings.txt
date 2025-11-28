@@ -1,0 +1,10 @@
+Untuk fix error "root directory 'web deliv manpro' does not exist":
+
+1. Buka: https://vercel.com/aprianditos-projects/secon-d/settings
+2. Scroll ke "Root Directory"
+3. Set ke: . (titik) atau kosongkan
+4. Klik Save
+5. Redeploy dari GitHub
+
+Atau gunakan Vercel CLI untuk update settings:
+vercel env pull

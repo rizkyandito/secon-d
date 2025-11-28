@@ -51,7 +51,8 @@ export default function Home() {
       return { ...m, avg }
     })
 
-    return withRatings.sort((a, b) => b.avg - a.avg).slice(0, 10)
+    // Limit to top 8 untuk performa optimal di home page
+    return withRatings.sort((a, b) => b.avg - a.avg).slice(0, 8)
   }, [filteredMerchants, activeCat])
 
   return (
