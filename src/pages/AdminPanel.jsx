@@ -40,7 +40,9 @@ export default function AdminPanel() {
     logo: "",
     phone: "",
     whatsapp: "",
+    tags: [], // Array of tag strings
   })
+  const [tagInput, setTagInput] = useState("") // Input untuk menambah tag baru
   const [editId, setEditId] = useState(null)
   const [notification, setNotification] = useState(null)
   const [newMenuItems, setNewMenuItems] = useState([])
@@ -105,8 +107,25 @@ export default function AdminPanel() {
       logo: "",
       phone: "",
       whatsapp: "",
+      tags: [],
     })
+    setTagInput("")
     setNewMenuItems([])
+  }
+
+  // Handler untuk menambah tag
+  const handleAddTag = (e) => {
+    e.preventDefault()
+    const trimmedTag = tagInput.trim()
+    if (trimmedTag && !form.tags.includes(trimmedTag)) {
+      setForm({ ...form, tags: [...form.tags, trimmedTag] })
+      setTagInput("")
+    }
+  }
+
+  // Handler untuk menghapus tag
+  const handleRemoveTag = (tagToRemove) => {
+    setForm({ ...form, tags: form.tags.filter(tag => tag !== tagToRemove) })
   }
 
   const submit = async (e) => {
@@ -147,6 +166,7 @@ export default function AdminPanel() {
         phone: form.phone,
         whatsapp: form.whatsapp,
         logo: logoUrl,
+        tags: form.tags,
         menu: menuWithImageUrls,
         menu_images: menuWithImageUrls.filter(m => m.image).map(m => ({ image_url: m.image }))
       }
@@ -173,7 +193,9 @@ export default function AdminPanel() {
       logo: m.logo,
       phone: m.phone,
       whatsapp: m.whatsapp,
+      tags: m.tags || [],
     })
+    setTagInput("")
     setNewMenuItems(m.menu || []) // Allow editing existing menu items
   }
 
@@ -295,12 +317,15 @@ export default function AdminPanel() {
     return "💾 Menggunakan data lokal (localStorage)"
   }
 
-  // Filter merchants berdasarkan search
+  // Filter merchants berdasarkan search (name, category, tags)
   const filteredMerchants = useMemo(() => {
-    return merchants.filter(m =>
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.category.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    return merchants.filter(m => {
+      const query = searchQuery.toLowerCase()
+      const matchName = m.name.toLowerCase().includes(query)
+      const matchCategory = m.category.toLowerCase().includes(query)
+      const matchTags = (m.tags || []).some(tag => tag.toLowerCase().includes(query))
+      return matchName || matchCategory || matchTags
+    })
   }, [merchants, searchQuery])
 
   // Pagination
@@ -455,6 +480,53 @@ export default function AdminPanel() {
             )}
           </div>
 
+          {/* --- Tags Section --- */}
+          <div className="md:col-span-2 mt-2">
+            <label className="block text-sm font-medium mb-2">Tags (untuk pencarian)</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    handleAddTag(e)
+                  }
+                }}
+                placeholder="Contoh: Ayam Geprek, Chinese Food, Pedas..."
+                className="flex-1 border rounded-xl px-3 py-2 dark:bg-slate-800"
+              />
+              <button
+                type="button"
+                onClick={handleAddTag}
+                className="btn btn-outline btn-sm"
+              >
+                + Tambah Tag
+              </button>
+            </div>
+            {form.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {form.tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-brand/10 to-brand2/10 rounded-full text-sm font-medium text-brand dark:text-brand2 border border-brand/20"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="ml-1 text-rose-500 hover:text-rose-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* --- End of Tags Section --- */}
+
           {/* --- Menu Items Section --- */}
           <div className="md:col-span-2 mt-4 border-t pt-4">
             <div className="flex justify-between items-center mb-2">
@@ -568,9 +640,9 @@ export default function AdminPanel() {
                           />
                         )}
                         {form.logo && (
-                          <button 
-                            type="button" 
-                            onClick={() => handleRemoveLogo(m.id)} 
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLogo(m.id)}
                             className="btn btn-danger"
                           >
                             Hapus Logo
@@ -578,6 +650,52 @@ export default function AdminPanel() {
                         )}
                       </div>
                     </div>
+                    {/* --- Tags Section (Edit Mode) --- */}
+                    <div className="md:col-span-2 mt-2">
+                      <label className="block text-sm font-medium mb-2">Tags (untuk pencarian)</label>
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="text"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault()
+                              handleAddTag(e)
+                            }
+                          }}
+                          placeholder="Contoh: Ayam Geprek, Chinese Food, Pedas..."
+                          className="flex-1 border rounded-xl px-3 py-2 dark:bg-slate-800"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddTag}
+                          className="btn btn-outline btn-sm"
+                        >
+                          + Tag
+                        </button>
+                      </div>
+                      {form.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {form.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-brand/10 to-brand2/10 rounded-full text-sm font-medium text-brand dark:text-brand2 border border-brand/20"
+                            >
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(tag)}
+                                className="ml-1 text-rose-500 hover:text-rose-700"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* --- End of Tags Section (Edit Mode) --- */}
                     <div className="flex gap-2 md:col-span-2">
                       <button className="btn btn-primary flex-1">Simpan</button>
                       <button
@@ -681,6 +799,18 @@ export default function AdminPanel() {
                     <div className="text-sm text-slate-500">{m.category}</div>
                     <div className="text-sm">📞 {m.phone}</div>
                     {m.whatsapp && <div className="text-sm">💬 {m.whatsapp}</div>}
+                    {m.tags && m.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {m.tags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full text-xs text-slate-600 dark:text-slate-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button

@@ -1,11 +1,29 @@
 -- =====================================================
--- SETUP ADMIN AUTHENTICATION DI SUPABASE
+-- SETUP ADMIN AUTHENTICATION & TAGS DI SUPABASE
 -- =====================================================
 -- Jalankan SQL ini di Supabase Dashboard:
 -- 1. Buka https://supabase.com/dashboard
 -- 2. Pilih project: kbmvomavvehrteslnjmh
 -- 3. Pergi ke SQL Editor
 -- 4. Paste dan jalankan script ini
+-- =====================================================
+
+-- =====================================================
+-- BAGIAN 1: SISTEM TAG UNTUK MERCHANT
+-- =====================================================
+
+-- 1. Tambah kolom tags ke tabel merchants (array of text)
+ALTER TABLE merchants ADD COLUMN IF NOT EXISTS tags TEXT[] DEFAULT '{}';
+
+-- 2. Buat index untuk pencarian tags yang lebih cepat
+CREATE INDEX IF NOT EXISTS idx_merchants_tags ON merchants USING GIN(tags);
+
+-- 3. Insert beberapa contoh tags ke merchant yang sudah ada (opsional)
+-- UPDATE merchants SET tags = ARRAY['Chinese Food', 'Nasi Goreng'] WHERE name LIKE '%Chinese%';
+-- UPDATE merchants SET tags = ARRAY['Ayam Geprek', 'Pedas', 'Murah'] WHERE name LIKE '%Geprek%';
+
+-- =====================================================
+-- BAGIAN 2: ADMIN AUTHENTICATION (dari sebelumnya)
 -- =====================================================
 
 -- 1. Buat tabel admins

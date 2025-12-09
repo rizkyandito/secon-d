@@ -26,15 +26,18 @@ export default function Directory() {
   const filtered = useMemo(() => {
     return merchants.filter((m) => {
       const byCat = cat === "Semua" || m.category === cat
+      const searchText = debouncedQ.toLowerCase()
       const byText = (
         m.name +
         " " +
         m.category +
         " " +
-        (m.menu || []).map((x) => x.name).join(" ")
+        (m.menu || []).map((x) => x.name).join(" ") +
+        " " +
+        (m.tags || []).join(" ") // Include tags in search
       )
         .toLowerCase()
-        .includes(debouncedQ.toLowerCase())
+        .includes(searchText)
       return byCat && byText
     })
   }, [merchants, debouncedQ, cat])
@@ -73,7 +76,7 @@ export default function Directory() {
             <input
               value={q}
               onChange={handleSearchChange}
-              placeholder="🔍 Cari nama toko atau menu..."
+              placeholder="🔍 Cari toko, menu, atau tag (misal: ayam geprek, chinese food)..."
               className="w-full px-5 py-3 border-2 border-slate-200 dark:border-slate-700 rounded-xl dark:bg-slate-900/50 backdrop-blur-xl focus:ring-2 focus:ring-brand focus:border-transparent transition-all duration-300"
             />
           </div>
