@@ -16,7 +16,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "script-src 'self' 'unsafe-eval' https://secon-d.vercel.app; object-src 'none'; base-uri 'self';"
+          "value": "script-src 'self' 'unsafe-eval' https://secon-d-azure.vercel.app; object-src 'none'; base-uri 'self';"
         }
       ]
     }
